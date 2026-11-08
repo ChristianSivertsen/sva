@@ -337,6 +337,27 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String get gymFormWallReset => 'Skrudd om i dag';
+
+  @override
+  String gymFormWallResetLabel(String name) {
+    return 'Merk $name som skrudd om i dag';
+  }
+
+  @override
+  String gymFormWallResetOn(String date) {
+    return 'Sist skrudd om $date';
+  }
+
+  @override
+  String get gymFormWallNeverReset => 'Ikke skrudd om ennå';
+
+  @override
+  String gymFormWallResetDone(String name) {
+    return '$name er merket som skrudd om i dag. De gamle rutene foreslås ikke lenger.';
+  }
+
+  @override
   String get gymFormSave => 'Lagre klatresenter';
 
   @override

@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
 import 'package:sva/src/gyms/colour_scale_editor.dart';
 import 'package:sva/src/places/form_parts.dart';
+import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/places/location_picker.dart';
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
@@ -38,6 +40,7 @@ class _Wall {
     this.id,
     double? heightM,
     this.angle,
+    this.lastResetOn,
   }) : name = TextEditingController(text: name),
        height = TextEditingController(text: _metres(heightM));
 
@@ -46,6 +49,9 @@ class _Wall {
   final TextEditingController height;
   String kind;
   String? angle;
+
+  /// `YYYY-MM-DD` of the wall's last reset, or `null` if never.
+  String? lastResetOn;
 
   /// A unique key, so removing a wall keeps the others' fields.
   final key = UniqueKey();
@@ -145,6 +151,7 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
             kind: w.kind,
             heightM: w.heightM,
             angle: w.angle,
+            lastResetOn: w.lastResetOn,
           ),
       ]);
       _colours.addAll([for (final c in colours) ColourEntry.fromRow(c)]);
@@ -187,6 +194,32 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
           angle: 'angle.vertical',
         ),
       ),
+    );
+  }
+
+  /// Marks [wall] as reset today: the routes still up on it stop being
+  /// suggested. Saved at once, since it is something that happened at the
+  /// gym, not an edit to the form.
+  Future<void> _resetWall(_Wall wall) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    try {
+      await ref
+          .read(gymRouteRepositoryProvider)
+          .resetWall(
+            wall.id!,
+            on: today,
+            userId: ref.read(currentUserIdProvider),
+          );
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.formSaveFailed)));
+      return;
+    }
+    if (!mounted) return;
+    setState(() => wall.lastResetOn = today);
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.gymFormWallResetDone(wall.name.text))),
     );
   }
 
@@ -336,6 +369,10 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
                       onRemove: _walls.length > 1
                           ? () => _removeWall(wall)
                           : null,
+                      // Only a saved wall can have routes to reset.
+                      onReset: wall.id == null
+                          ? null
+                          : () => unawaited(_resetWall(wall)),
                     ),
                   ],
                   const SizedBox(height: SvaSpace.sm),
@@ -385,12 +422,14 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
   }
 }
 
-/// One wall: name, type, height and angle.
+/// One wall: name, type, height and angle, and for a saved wall its last
+/// reset.
 class _WallCard extends StatelessWidget {
   const new({
     required this.wall,
     required this.onChanged,
     required this.onRemove,
+    required this.onReset,
     super.key,
   });
 
@@ -399,6 +438,9 @@ class _WallCard extends StatelessWidget {
 
   /// `null` for the last wall: a gym keeps at least one.
   final VoidCallback? onRemove;
+
+  /// `null` for a wall that isn't saved yet.
+  final VoidCallback? onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -477,6 +519,37 @@ class _WallCard extends StatelessWidget {
                 onChanged();
               },
             ),
+            if (onReset != null)
+              Wrap(
+                spacing: SvaSpace.sm,
+                runSpacing: SvaSpace.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    switch (wall.lastResetOn) {
+                      final day? => l10n.gymFormWallResetOn(
+                        formatDay(l10n, day),
+                      ),
+                      null => l10n.gymFormWallNeverReset,
+                    },
+                    style: context.svaText.caption.copyWith(
+                      color: context.svaColors.textMuted,
+                    ),
+                  ),
+                  ListenableBuilder(
+                    listenable: wall.name,
+                    builder: (context, _) => Semantics(
+                      label: l10n.gymFormWallResetLabel(wall.name.text),
+                      excludeSemantics: true,
+                      button: true,
+                      child: OutlinedButton(
+                        onPressed: onReset,
+                        child: Text(l10n.gymFormWallReset),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

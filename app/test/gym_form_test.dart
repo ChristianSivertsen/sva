@@ -97,8 +97,23 @@ GymWall _wall(String id, String name, String kind, double height) => GymWall(
   sort: 0,
 );
 
+/// Records wall resets. The resets themselves are tested in sva_data.
+class _FakeRoutes extends GymRouteRepository {
+  new(super.db);
+
+  final resets = <(String, String)>[];
+
+  @override
+  Future<void> resetWall(
+    String wallId, {
+    required String on,
+    required String userId,
+  }) async => resets.add((wallId, on));
+}
+
 void main() {
   late _FakeGyms gyms;
+  late _FakeRoutes routes;
 
   /// Opens settings, and the gym form for [existing] when given.
   Future<void> open(
@@ -112,9 +127,11 @@ void main() {
     final db = SvaDatabase.inMemory();
     addTearDown(db.close);
     gyms = _FakeGyms(db, existing: existing, fail: fail);
+    routes = _FakeRoutes(db);
     final container = ProviderContainer(
       overrides: [
         gymEditorProvider.overrideWithValue(gyms),
+        gymRouteRepositoryProvider.overrideWithValue(routes),
         gymsProvider.overrideWith((ref) => Stream.value(const [])),
         settingsProvider.overrideWith((ref) => Stream.value(const Settings())),
         gradeSystemsProvider.overrideWith((ref) async => gradeSystems),
@@ -432,5 +449,42 @@ void main() {
     expect(gyms.colours!.single.name, 'Blå');
     expect(gyms.colours!.single.boulder, range);
     semantics.dispose();
+  });
+
+  testWidgets('M3-3: a saved wall can be marked as reset today', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      existing: (
+        gym: _gym(),
+        grading: 'colour',
+        walls: [_wall('w1', 'Cave', 'boulder', 4)],
+        colours: const <GymColourGrade>[],
+      ),
+    );
+    expect(find.text('Not reset yet'), findsOneWidget);
+    await tester.ensureVisible(find.text('Reset today'));
+    await tester.tap(find.text('Reset today'));
+    await tester.pumpAndSettle();
+
+    final today = DateTime.now();
+    final day =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-'
+        '${today.day.toString().padLeft(2, '0')}';
+    expect(routes.resets, [('w1', day)]);
+    expect(find.textContaining('Last reset '), findsOneWidget);
+    expect(
+      find.text(
+        'Cave is marked as reset today. Its old routes are no longer '
+        'suggested.',
+      ),
+      findsOneWidget,
+    );
+
+    // A wall that isn't saved yet has no routes to reset.
+    await tester.tap(find.text('Add a wall'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset today'), findsOneWidget);
   });
 }

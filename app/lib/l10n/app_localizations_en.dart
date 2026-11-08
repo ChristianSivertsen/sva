@@ -337,6 +337,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get gymFormWallReset => 'Reset today';
+
+  @override
+  String gymFormWallResetLabel(String name) {
+    return 'Mark $name as reset today';
+  }
+
+  @override
+  String gymFormWallResetOn(String date) {
+    return 'Last reset $date';
+  }
+
+  @override
+  String get gymFormWallNeverReset => 'Not reset yet';
+
+  @override
+  String gymFormWallResetDone(String name) {
+    return '$name is marked as reset today. Its old routes are no longer suggested.';
+  }
+
+  @override
   String get gymFormSave => 'Save gym';
 
   @override

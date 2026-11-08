@@ -213,6 +213,32 @@
   "gymFormWallDefaultRope": "Main wall",
   "gymFormWallDefaultBoulder": "Boulder area",
   "gymFormWallDefault": "Wall {number}",
+  "gymFormWallReset": "Reset today",
+  "gymFormWallResetLabel": "Mark {name} as reset today",
+  "@gymFormWallResetLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallResetOn": "Last reset {date}",
+  "@gymFormWallResetOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallNeverReset": "Not reset yet",
+  "gymFormWallResetDone": "{name} is marked as reset today. Its old routes are no longer suggested.",
+  "@gymFormWallResetDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "@gymFormWallDefault": {
     "placeholders": {
       "number": {

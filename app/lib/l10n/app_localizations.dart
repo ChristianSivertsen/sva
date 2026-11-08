@@ -560,6 +560,36 @@ abstract class AppLocalizations {
   /// **'Wall {number}'**
   String gymFormWallDefault(int number);
 
+  /// No description provided for @gymFormWallReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset today'**
+  String get gymFormWallReset;
+
+  /// No description provided for @gymFormWallResetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark {name} as reset today'**
+  String gymFormWallResetLabel(String name);
+
+  /// No description provided for @gymFormWallResetOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Last reset {date}'**
+  String gymFormWallResetOn(String date);
+
+  /// No description provided for @gymFormWallNeverReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reset yet'**
+  String get gymFormWallNeverReset;
+
+  /// No description provided for @gymFormWallResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is marked as reset today. Its old routes are no longer suggested.'**
+  String gymFormWallResetDone(String name);
+
   /// No description provided for @gymFormSave.
   ///
   /// In en, this message translates to:

@@ -229,6 +229,11 @@ final Provider<GymEditor> gymEditorProvider = Provider(
   (ref) => GymEditor(ref.watch(databaseProvider)),
 );
 
+/// The user's temporary gym routes: adding, projects, resets and gone.
+final Provider<GymRouteRepository> gymRouteRepositoryProvider = Provider(
+  (ref) => GymRouteRepository(ref.watch(databaseProvider)),
+);
+
 /// The gyms the user can see, by name, live.
 final StreamProvider<List<Area>> gymsProvider = StreamProvider.autoDispose(
   (ref) => ref.watch(areaRepositoryProvider).watchOfTypes({
