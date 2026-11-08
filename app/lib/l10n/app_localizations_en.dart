@@ -225,6 +225,60 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each climb you log on a wall gets its height and starts with its angle. You can change the angle per climb.';
 
   @override
+  String get gymFormColours => 'Colours, easiest first';
+
+  @override
+  String get gymFormColoursNote =>
+      'Ranges are optional. With a range, climbs on that colour join grade charts at the middle of it. Without one, they still count in volume, angle and hold stats.';
+
+  @override
+  String get gymFormColourAdd => 'Add a colour';
+
+  @override
+  String get gymFormColourName => 'Colour name';
+
+  @override
+  String get gymFormColourNameMissing => 'Give the colour a name.';
+
+  @override
+  String gymFormColourPick(String name) {
+    return 'Pick the colour for $name';
+  }
+
+  @override
+  String gymFormColourEasier(String name) {
+    return 'Move $name up, as easier';
+  }
+
+  @override
+  String gymFormColourRemove(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get gymFormColourBoulders => 'Boulders';
+
+  @override
+  String get gymFormColourRoutes => 'Routes';
+
+  @override
+  String get gymFormColourUnmapped => 'Not mapped';
+
+  @override
+  String get gymFormColourTo => 'to';
+
+  @override
+  String get gymColourGreen => 'Green';
+
+  @override
+  String get gymColourBlue => 'Blue';
+
+  @override
+  String gymColourNew(int number) {
+    return 'Colour $number';
+  }
+
+  @override
   String get gymFormWallAdd => 'Add a wall';
 
   @override

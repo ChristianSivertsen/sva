@@ -225,6 +225,60 @@ class AppLocalizationsNb extends AppLocalizations {
       'Hver klatring du logger på en vegg får veggens høyde og starter med vinkelen. Vinkelen kan endres per klatring.';
 
   @override
+  String get gymFormColours => 'Farger, letteste først';
+
+  @override
+  String get gymFormColoursNote =>
+      'Gradespenn er valgfritt. Med et spenn havner klatringer på fargen midt i det i gradediagrammene. Uten teller de likevel med i volum, vinkel og grep.';
+
+  @override
+  String get gymFormColourAdd => 'Legg til farge';
+
+  @override
+  String get gymFormColourName => 'Navn på fargen';
+
+  @override
+  String get gymFormColourNameMissing => 'Gi fargen et navn.';
+
+  @override
+  String gymFormColourPick(String name) {
+    return 'Velg farge for $name';
+  }
+
+  @override
+  String gymFormColourEasier(String name) {
+    return 'Flytt $name opp, som lettere';
+  }
+
+  @override
+  String gymFormColourRemove(String name) {
+    return 'Fjern $name';
+  }
+
+  @override
+  String get gymFormColourBoulders => 'Buldring';
+
+  @override
+  String get gymFormColourRoutes => 'Ruter';
+
+  @override
+  String get gymFormColourUnmapped => 'Uten grader';
+
+  @override
+  String get gymFormColourTo => 'til';
+
+  @override
+  String get gymColourGreen => 'Grønn';
+
+  @override
+  String get gymColourBlue => 'Blå';
+
+  @override
+  String gymColourNew(int number) {
+    return 'Farge $number';
+  }
+
+  @override
   String get gymFormWallAdd => 'Legg til vegg';
 
   @override

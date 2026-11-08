@@ -122,6 +122,49 @@
   },
   "gymFormWalls": "Walls",
   "gymFormWallsNote": "Each climb you log on a wall gets its height and starts with its angle. You can change the angle per climb.",
+  "gymFormColours": "Colours, easiest first",
+  "gymFormColoursNote": "Ranges are optional. With a range, climbs on that colour join grade charts at the middle of it. Without one, they still count in volume, angle and hold stats.",
+  "gymFormColourAdd": "Add a colour",
+  "gymFormColourName": "Colour name",
+  "gymFormColourNameMissing": "Give the colour a name.",
+  "gymFormColourPick": "Pick the colour for {name}",
+  "@gymFormColourPick": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormColourEasier": "Move {name} up, as easier",
+  "@gymFormColourEasier": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormColourRemove": "Remove {name}",
+  "@gymFormColourRemove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormColourBoulders": "Boulders",
+  "gymFormColourRoutes": "Routes",
+  "gymFormColourUnmapped": "Not mapped",
+  "gymFormColourTo": "to",
+  "gymColourGreen": "Green",
+  "gymColourBlue": "Blue",
+  "gymColourNew": "Colour {number}",
+  "@gymColourNew": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "gymFormWallAdd": "Add a wall",
   "gymFormWallName": "Wall name",
   "gymFormWallNameMissing": "Give the wall a name.",

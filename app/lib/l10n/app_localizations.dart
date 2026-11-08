@@ -386,6 +386,96 @@ abstract class AppLocalizations {
   /// **'Each climb you log on a wall gets its height and starts with its angle. You can change the angle per climb.'**
   String get gymFormWallsNote;
 
+  /// No description provided for @gymFormColours.
+  ///
+  /// In en, this message translates to:
+  /// **'Colours, easiest first'**
+  String get gymFormColours;
+
+  /// No description provided for @gymFormColoursNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranges are optional. With a range, climbs on that colour join grade charts at the middle of it. Without one, they still count in volume, angle and hold stats.'**
+  String get gymFormColoursNote;
+
+  /// No description provided for @gymFormColourAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a colour'**
+  String get gymFormColourAdd;
+
+  /// No description provided for @gymFormColourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour name'**
+  String get gymFormColourName;
+
+  /// No description provided for @gymFormColourNameMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the colour a name.'**
+  String get gymFormColourNameMissing;
+
+  /// No description provided for @gymFormColourPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the colour for {name}'**
+  String gymFormColourPick(String name);
+
+  /// No description provided for @gymFormColourEasier.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {name} up, as easier'**
+  String gymFormColourEasier(String name);
+
+  /// No description provided for @gymFormColourRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String gymFormColourRemove(String name);
+
+  /// No description provided for @gymFormColourBoulders.
+  ///
+  /// In en, this message translates to:
+  /// **'Boulders'**
+  String get gymFormColourBoulders;
+
+  /// No description provided for @gymFormColourRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes'**
+  String get gymFormColourRoutes;
+
+  /// No description provided for @gymFormColourUnmapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Not mapped'**
+  String get gymFormColourUnmapped;
+
+  /// No description provided for @gymFormColourTo.
+  ///
+  /// In en, this message translates to:
+  /// **'to'**
+  String get gymFormColourTo;
+
+  /// No description provided for @gymColourGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get gymColourGreen;
+
+  /// No description provided for @gymColourBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get gymColourBlue;
+
+  /// No description provided for @gymColourNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour {number}'**
+  String gymColourNew(int number);
+
   /// No description provided for @gymFormWallAdd.
   ///
   /// In en, this message translates to:
