@@ -14,12 +14,8 @@ ScoreRange colourRange(Grade easiest, Grade hardest) {
 }
 
 /// The score a climb on a colour joins grade stats at: the middle of the
-/// colour's [range], or `null` when the colour is not mapped.
+/// colour's [range], or `null` when the colour is not mapped. A climb
+/// without a score is left out of grade stats only; volume, angle and
+/// hold stats count every climb (M6-1).
 double? colourScore(ScoreRange? range) =>
     range == null ? null : (range.min + range.max) / 2;
-
-/// Whether a climb with [score] belongs in grade stats (pyramids, top
-/// grades). A climb without a score, such as one on an unmapped gym
-/// colour, is left out of those only: volume, angle and hold stats count
-/// every climb.
-bool countsInGradeStats(double? score) => score != null;

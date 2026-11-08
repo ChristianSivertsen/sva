@@ -20,8 +20,6 @@ void main() {
     // Without a range a climb has no grade score: grade charts leave it
     // out, while volume, angle and hold stats count it (M6-1).
     expect(colourScore(null), isNull);
-    expect(countsInGradeStats(colourScore(null)), isFalse);
-    expect(countsInGradeStats(colourScore(blue)), isTrue);
 
     // A range runs easiest to hardest.
     expect(

@@ -59,6 +59,7 @@ void main() {
           angle: 'angle.overhang',
         ),
       ],
+      colours: const [],
       userId: 'me',
     );
     setup = (await gyms.setup(id, userId: 'me'))!;
@@ -76,6 +77,7 @@ void main() {
         id,
         const NewGym(name: 'Mine now', countryCode: 'NO', grading: 'none'),
         walls: walls,
+        colours: const [],
         userId: 'someone else',
       ),
       throwsArgumentError,
@@ -176,6 +178,7 @@ void main() {
         id,
         const NewGym(name: 'Renamed', countryCode: 'NO', grading: 'none'),
         walls: walls,
+        colours: const [],
         userId: 'me',
       ),
       throwsArgumentError,
@@ -184,6 +187,7 @@ void main() {
     await gyms.saveOwn(
       id,
       walls: const [WallDraft(name: 'Their cave', kind: 'boulder')],
+      colours: const [],
       userId: 'someone else',
     );
     expect(
@@ -212,7 +216,7 @@ void main() {
     final elsewhere = (await gyms.setup(other, userId: 'me'))!.walls.single;
 
     Future<void> save(List<WallDraft> walls) =>
-        gyms.saveOwn(id, walls: walls, userId: 'me');
+        gyms.saveOwn(id, walls: walls, colours: const [], userId: 'me');
     expect(
       () => save([WallDraft(id: elsewhere.id, name: 'Moved', kind: 'rope')]),
       throwsArgumentError,
@@ -328,4 +332,45 @@ void main() {
       expect((await gyms.setup(id, userId: 'me'))!.colours, hasLength(2));
     },
   );
+
+  test("M3-2: colours are each user's own", () async {
+    final id = await gyms.addGym(
+      const NewGym(name: 'Klatreverket', countryCode: 'NO', grading: 'colour'),
+      walls: walls,
+      colours: const [ColourDraft(name: 'Green', colourHex: '#3FA34D')],
+      userId: 'me',
+    );
+    await (db.update(db.areas)..where((a) => a.id.equals(id))).write(
+      const AreasCompanion(visibility: Value('public')),
+    );
+    await gyms.saveOwn(
+      id,
+      walls: const [],
+      colours: const [ColourDraft(name: 'Gul', colourHex: '#F2C230')],
+      userId: 'someone else',
+    );
+    final mine = (await gyms.setup(id, userId: 'me'))!.colours;
+    expect(mine.map((c) => c.name), ['Green']);
+    expect(
+      (await gyms.setup(
+        id,
+        userId: 'someone else',
+      ))!.colours.map((c) => c.name),
+      ['Gul'],
+    );
+
+    // Someone else can't change or remove my colour by its id.
+    expect(
+      () => gyms.saveOwn(
+        id,
+        walls: const [],
+        colours: [
+          ColourDraft(id: mine.single.id, name: 'Taken', colourHex: '#000000'),
+        ],
+        userId: 'someone else',
+      ),
+      throwsArgumentError,
+    );
+    expect((await gyms.setup(id, userId: 'me'))!.colours.single.name, 'Green');
+  });
 }

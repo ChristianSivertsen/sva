@@ -158,8 +158,8 @@ class GymEditor {
     String gymId,
     NewGym gym, {
     required List<WallDraft> walls,
+    required List<ColourDraft> colours,
     required String userId,
-    List<ColourDraft> colours = const [],
   }) async {
     final name = _checkGym(gym);
     await _checkWalls(walls);
@@ -194,13 +194,14 @@ class GymEditor {
 
   /// Makes [userId]'s walls and colours on gym [gymId] exactly [walls]
   /// and [colours]: drafts with an id change that row, new ones are added
-  /// and rows left out are deleted (soft, like every delete). Works on any
-  /// gym the user can see, since walls and colours are each user's own.
+  /// and rows left out are deleted (soft, like every delete), so both
+  /// lists are always given in full. Works on any gym the user can see,
+  /// since walls and colours are each user's own.
   Future<void> saveOwn(
     String gymId, {
     required List<WallDraft> walls,
+    required List<ColourDraft> colours,
     required String userId,
-    List<ColourDraft> colours = const [],
   }) async {
     await _checkWalls(walls);
     _checkColours(colours);
