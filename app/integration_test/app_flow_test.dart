@@ -133,6 +133,74 @@ void main() {
     await tester.pumpAndSettle();
     expect(await climbsInRow(), before + 1);
   });
+
+  testWidgets('M3-4: log a gym session with three climbs on two walls', (
+    tester,
+  ) async {
+    await app.main();
+    await tester.pumpAndSettle();
+    final l10n = AppLocalizations.of(tester.element(find.byType(AppShell)));
+    final (:inSheet, :reveal, :tap) = _sheetHelpers(tester);
+    final gym = 'Flow gym ${DateTime.now().millisecondsSinceEpoch}';
+
+    // Set the gym up once: it starts with a rope wall and a boulder area,
+    // in green and blue.
+    await tester.tap(find.bySemanticsLabel(l10n.tabCv));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip(l10n.settingsOpen));
+    await tester.pumpAndSettle();
+    final addGym = find.text(l10n.settingsGymAdd);
+    await tester.scrollUntilVisible(
+      addGym,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(addGym);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, l10n.formName),
+      gym,
+    );
+    await tester.tap(find.text(l10n.gymFormSave));
+    await _pumpUntilFound(tester, find.text(gym));
+    await tester.tap(find.bySemanticsLabel(l10n.tabFeed));
+    await tester.pumpAndSettle();
+
+    await tap(find.byKey(logButtonKey));
+    await tap(inSheet(find.text(l10n.logIndoor)));
+    final gymChip = inSheet(find.widgetWithText(FilterChip, gym));
+    if (gymChip.evaluate().isNotEmpty) await tap(gymChip);
+    Finder tile(String colour, String kind) =>
+        inSheet(find.bySemanticsLabel(l10n.logIndoorTopped(colour, kind)));
+    final boulder = l10n.gymWallKind('boulder');
+    final rope = l10n.gymWallKind('rope');
+    await tap(tile('Green', boulder));
+    await tap(tile('Blue', boulder));
+    await tap(inSheet(find.text(l10n.logIndoorDidntTop)));
+    await tap(inSheet(find.text(rope)));
+    await tap(tile('Blue', rope));
+    await tap(inSheet(find.text(l10n.logSave(3))));
+
+    await _pumpUntilFound(tester, find.text(l10n.logSaved));
+    final card = find.ancestor(
+      of: find.text(gym),
+      matching: find.byType(FeedCard),
+    );
+    await tester.scrollUntilVisible(
+      card,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(FeedScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(
+      find.descendant(of: card, matching: find.byType(SvaStyleTag)),
+      findsNWidgets(3),
+    );
+  });
 }
 
 /// Pumps until [target] is on screen, for work that pumpAndSettle does not
