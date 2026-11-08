@@ -102,13 +102,17 @@ class _FakeRoutes extends GymRouteRepository {
   new(super.db);
 
   final resets = <(String, String)>[];
+  bool fail = false;
 
   @override
   Future<void> resetWall(
     String wallId, {
     required String on,
     required String userId,
-  }) async => resets.add((wallId, on));
+  }) async {
+    if (fail) throw StateError('disk full');
+    resets.add((wallId, on));
+  }
 }
 
 void main() {
@@ -463,9 +467,35 @@ void main() {
         colours: const <GymColourGrade>[],
       ),
     );
+    final semantics = tester.ensureSemantics();
     expect(find.text('Not reset yet'), findsOneWidget);
+    expect(find.bySemanticsLabel('Mark Cave as reset today'), findsOneWidget);
     await tester.ensureVisible(find.text('Reset today'));
+
+    // It asks first, saying what ends; "Not now" changes nothing.
     await tester.tap(find.text('Reset today'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark Cave as reset today?'), findsOneWidget);
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(routes.resets, isEmpty);
+
+    // A failed save says so and keeps the wall as it was.
+    routes.fail = true;
+    await tester.tap(find.text('Reset today'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark as reset'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text("Couldn't save. Check the fields and try again."),
+      findsOneWidget,
+    );
+    expect(find.text('Not reset yet'), findsOneWidget);
+    routes.fail = false;
+
+    await tester.tap(find.text('Reset today'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark as reset'));
     await tester.pumpAndSettle();
 
     final today = DateTime.now();
@@ -486,5 +516,6 @@ void main() {
     await tester.tap(find.text('Add a wall'));
     await tester.pumpAndSettle();
     expect(find.text('Reset today'), findsOneWidget);
+    semantics.dispose();
   });
 }

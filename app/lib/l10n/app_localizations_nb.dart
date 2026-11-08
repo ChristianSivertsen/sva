@@ -358,6 +358,22 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String gymFormWallResetTitle(String name) {
+    return 'Merke $name som skrudd om i dag?';
+  }
+
+  @override
+  String gymFormWallResetBody(String name) {
+    return 'Ruter på $name som du ikke har klatret til topps, avsluttes som prosjekter og foreslås ikke lenger. Klatringene dine på dem blir værende i loggen.';
+  }
+
+  @override
+  String get gymFormWallResetCancel => 'Ikke nå';
+
+  @override
+  String get gymFormWallResetConfirm => 'Merk som skrudd om';
+
+  @override
   String get gymFormSave => 'Lagre klatresenter';
 
   @override

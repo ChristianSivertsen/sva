@@ -213,6 +213,13 @@
   "gymFormWallDefaultRope": "Main wall",
   "gymFormWallDefaultBoulder": "Boulder area",
   "gymFormWallDefault": "Wall {number}",
+  "@gymFormWallDefault": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "gymFormWallReset": "Reset today",
   "gymFormWallResetLabel": "Mark {name} as reset today",
   "@gymFormWallResetLabel": {
@@ -239,13 +246,24 @@
       }
     }
   },
-  "@gymFormWallDefault": {
+  "gymFormWallResetTitle": "Mark {name} as reset today?",
+  "@gymFormWallResetTitle": {
     "placeholders": {
-      "number": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
+  "gymFormWallResetBody": "Routes on {name} that you haven't sent end as projects and are no longer suggested. Your climbs on them stay in your log.",
+  "@gymFormWallResetBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallResetCancel": "Not now",
+  "gymFormWallResetConfirm": "Mark as reset",
   "gymFormSave": "Save gym",
   "gymFormNotYours": "This gym is shared, so only your walls can be changed here.",
   "settingsAbout": "About",

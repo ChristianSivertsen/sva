@@ -358,6 +358,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String gymFormWallResetTitle(String name) {
+    return 'Mark $name as reset today?';
+  }
+
+  @override
+  String gymFormWallResetBody(String name) {
+    return 'Routes on $name that you haven\'t sent end as projects and are no longer suggested. Your climbs on them stay in your log.';
+  }
+
+  @override
+  String get gymFormWallResetCancel => 'Not now';
+
+  @override
+  String get gymFormWallResetConfirm => 'Mark as reset';
+
+  @override
   String get gymFormSave => 'Save gym';
 
   @override

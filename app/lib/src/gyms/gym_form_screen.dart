@@ -197,12 +197,38 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
     );
   }
 
-  /// Marks [wall] as reset today: the routes still up on it stop being
-  /// suggested. Saved at once, since it is something that happened at the
-  /// gym, not an edit to the form.
+  /// Marks [wall] as reset today, after asking: the routes still up on it
+  /// stop being suggested. Saved at once, since it is something that
+  /// happened at the gym, not an edit to the form.
   Future<void> _resetWall(_Wall wall) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final colors = context.svaColors;
+    final name = wall.name.text;
+    // It ends the open projects on the wall, so ask first and say so
+    // (docs/DESIGN.md, Destructive button).
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.gymFormWallResetTitle(name)),
+        content: Text(l10n.gymFormWallResetBody(name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.gymFormWallResetCancel),
+          ),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colors.danger,
+              side: BorderSide(color: colors.danger),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.gymFormWallResetConfirm),
+          ),
+        ],
+      ),
+    );
+    if (sure != true || !mounted) return;
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     try {
       await ref
@@ -213,14 +239,19 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
             userId: ref.read(currentUserIdProvider),
           );
     } on Object {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.formSaveFailed)));
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.formSaveFailed)));
       return;
     }
     if (!mounted) return;
     setState(() => wall.lastResetOn = today);
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.gymFormWallResetDone(wall.name.text))),
-    );
+    // Replaces a message from an earlier try, so this one shows now.
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(l10n.gymFormWallResetDone(wall.name.text))),
+      );
   }
 
   void _removeWall(_Wall wall) => setState(() {
@@ -539,6 +570,7 @@ class _WallCard extends StatelessWidget {
                   ListenableBuilder(
                     listenable: wall.name,
                     builder: (context, _) => Semantics(
+                      container: true,
                       label: l10n.gymFormWallResetLabel(wall.name.text),
                       excludeSemantics: true,
                       button: true,
