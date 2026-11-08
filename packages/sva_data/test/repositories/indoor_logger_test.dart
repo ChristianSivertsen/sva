@@ -82,6 +82,17 @@ void main() {
       ).projects(gymId, userId: 'me')).single.route;
       expect(caveBlue.setOn, '2026-11-03');
       expect(caveBlue.lengthM, 4.5);
+      // Gym routes have no name: they show as their colour and wall.
+      expect(await GymRouteRepository(db).label(caveBlue.id, userId: 'me'), (
+        colour: 'Blue',
+        grade: null,
+        gradeSystem: null,
+        wall: 'Cave',
+      ));
+      expect(
+        await GymRouteRepository(db).label(caveBlue.id, userId: 'someone else'),
+        isNull,
+      );
 
       // Thursday: sent it on try 4, and a new blue on the main wall after a
       // fall the same night.

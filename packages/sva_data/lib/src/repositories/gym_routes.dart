@@ -43,6 +43,16 @@ final class NewGymRoute {
 /// the day of the latest one.
 typedef GymProject = ({Route route, int tries, String lastTried});
 
+/// How a gym route is shown, since it has no name: its colour (or its
+/// grade, with the grade's system) and its wall. All `null` parts are
+/// unknown, such as the wall of a route whose wall was removed.
+typedef GymRouteLabel = ({
+  String? colour,
+  String? grade,
+  String? gradeSystem,
+  String? wall,
+});
+
 /// Temporary gym routes: each user's own, on their walls. There is no
 /// timer (PLAN.md decision 4): a route stays until its wall is reset or
 /// it is marked as gone, which retire it. Everything is checked here, at
@@ -148,6 +158,48 @@ class GymRouteRepository {
       }
       return routeId;
     });
+  }
+
+  /// How [userId]'s gym route [routeId] is shown, or `null` when it is
+  /// not one of their gym routes.
+  Future<GymRouteLabel?> label(String routeId, {required String userId}) async {
+    final route =
+        await (db.select(db.routes)..where(
+              (r) =>
+                  r.id.equals(routeId) &
+                  r.kind.equals('gym') &
+                  r.createdBy.equals(userId),
+            ))
+            .getSingleOrNull();
+    if (route == null) return null;
+    // Removed walls and colours still name the climbs logged on them.
+    final colour = route.gymColourGradeId == null
+        ? null
+        : await (db.select(db.gymColourGrades)
+                ..where((c) => c.id.equals(route.gymColourGradeId!)))
+              .getSingleOrNull();
+    final wall = route.gymWallId == null
+        ? null
+        : await (db.select(
+            db.gymWalls,
+          )..where((w) => w.id.equals(route.gymWallId!))).getSingleOrNull();
+    final grade =
+        await (db.select(db.routeGrades).join([
+              innerJoin(
+                db.grades,
+                db.grades.id.equalsExp(db.routeGrades.gradeId),
+              ),
+            ])..where(
+              db.routeGrades.routeId.equals(routeId) &
+                  db.routeGrades.deletedAt.isNull(),
+            ))
+            .getSingleOrNull();
+    return (
+      colour: colour?.name,
+      grade: grade?.readTable(db.grades).label,
+      gradeSystem: grade?.readTable(db.grades).systemKey,
+      wall: wall?.name,
+    );
   }
 
   /// [userId]'s routes still up on wall [wallId], newest set first.
