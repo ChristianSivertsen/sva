@@ -62,6 +62,55 @@ Future<void> seedExampleData(SvaDatabase db, {required String userId}) async {
     );
     area('Hanshelleren', 'sector', parent: 'Flatanger');
     area('Home gym, Oslo', 'gym');
+    // Its colours and walls, as in prototype/gym-log.html, so the gym log
+    // can be tried straight away.
+    final gym = exampleId('Home gym, Oslo');
+    b.insert(
+      db.gymProfiles,
+      GymProfilesCompanion.insert(
+        id: exampleId('gym profile'),
+        createdAt: t,
+        updatedAt: t,
+        createdBy: Value(userId),
+        areaId: gym,
+        grading: 'colour',
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+    for (final (i, (name, kind, height, angle)) in _exampleWalls.indexed) {
+      b.insert(
+        db.gymWalls,
+        GymWallsCompanion.insert(
+          id: exampleId('wall $name'),
+          createdAt: t,
+          updatedAt: t,
+          ownerId: userId,
+          gymId: gym,
+          name: name,
+          kind: kind,
+          heightM: Value(height),
+          angle: Value(angle),
+          sort: Value(i),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    for (final (i, (name, hex)) in _exampleColours.indexed) {
+      b.insert(
+        db.gymColourGrades,
+        GymColourGradesCompanion.insert(
+          id: exampleId('colour $name'),
+          createdAt: t,
+          updatedAt: t,
+          ownerId: userId,
+          gymId: gym,
+          sort: i,
+          name: name,
+          colourHex: hex,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
 
     void route(String name, String area, String discipline, String angle) =>
         b.insert(
@@ -277,6 +326,23 @@ const _routes = {
   'Nordlys': ('Hanshelleren', 'sport', 'angle.roof'),
 };
 
+/// The example gym's walls: name, kind, height in metres and angle.
+const _exampleWalls = [
+  ('Cave', 'boulder', 4.5, 'angle.overhang'),
+  ('Board', 'boulder', 3.5, 'angle.overhang'),
+  ('Slab corner', 'boulder', 4.0, 'angle.slab'),
+  ('Main wall', 'rope', 15.0, 'angle.vertical'),
+];
+
+/// The example gym's colours, easiest first.
+const _exampleColours = [
+  ('Green', '#3FA34D'),
+  ('Blue', '#2F6FD1'),
+  ('Yellow', '#E8C21C'),
+  ('Red', '#D33A2C'),
+  ('Black', '#1E1E1E'),
+];
+
 String _exampleId(String userId, String name) =>
     seedId('example:$userId:$name');
 
@@ -311,6 +377,9 @@ Set<String> exampleIds(String userId) => {
     'benchmark max hang',
     for (final d in ['2025-11-10', '2026-04-02', '2026-10-01']) 'result $d',
     'goal offwidth',
+    'gym profile',
+    for (final (name, _, _, _) in _exampleWalls) 'wall $name',
+    for (final (name, _) in _exampleColours) 'colour $name',
   ])
     _exampleId(userId, name),
 };
