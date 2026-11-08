@@ -743,8 +743,26 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorHint => 'Vegger og brett';
 
   @override
+  String get logIndoorNoTiles =>
+      'Ingenting å trykke på ennå. Legg inn farger eller velg gradering for klatresenteret under Innstillinger, Klatresentre.';
+
+  @override
+  String get logIndoorLoadFailed =>
+      'Kunne ikke laste klatresentrene. Lukk loggen og prøv igjen.';
+
+  @override
+  String logIndoorKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'boulder': 'buldring',
+      'rope': 'tau',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
   String get logIndoorNoGym =>
-      'Legg først inn klatresenteret du klatrer på: veggene og fargene.';
+      'Legg inn klatresenteret ditt først: veggene og fargene.';
 
   @override
   String get logIndoorNoWalls =>
@@ -760,11 +778,11 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorTapHint => 'Trykk på en farge hver gang du toppet den.';
 
   @override
-  String get logIndoorUngraded => 'Toppet';
+  String get logIndoorUngraded => 'Klatring';
 
   @override
   String logIndoorTopped(String colour, String kind) {
-    return 'Toppet en $colour ($kind)';
+    return 'Toppet $colour, $kind';
   }
 
   @override

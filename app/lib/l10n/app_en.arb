@@ -453,13 +453,24 @@
   "logOutdoorHint": "Crags and mountains",
   "logIndoor": "Indoor gym",
   "logIndoorHint": "Walls and boards",
-  "logIndoorNoGym": "Set up the gym you climb at first: its walls and colours.",
+  "logIndoorNoTiles": "Nothing to tap yet. Add colours or choose a grading for this gym in Settings, under Gyms.",
+  "logIndoorLoadFailed": "Couldn't load your gyms. Close the log and try again.",
+  "logIndoorKind": "{kind, select, boulder{boulder} rope{rope} other{}}",
+  "@logIndoorKind": {
+    "description": "Lower case, inside a sentence such as 'Topped Blue, boulder'.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorNoGym": "Set up your gym first: its walls and colours.",
   "logIndoorNoWalls": "This gym has no walls yet. Add them in Settings, under Gyms.",
   "logIndoorGym": "Gym",
   "logIndoorWall": "Wall",
   "logIndoorTapHint": "Tap a colour each time you top it.",
-  "logIndoorUngraded": "Topped",
-  "logIndoorTopped": "Topped a {colour} on {kind}",
+  "logIndoorUngraded": "Climb",
+  "logIndoorTopped": "Topped {colour}, {kind}",
   "@logIndoorTopped": {
     "placeholders": {
       "colour": {

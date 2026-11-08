@@ -208,14 +208,9 @@ class _ClimbCard extends ConsumerWidget {
     final gym = climb.setting == 'indoor'
         ? ref.watch(gymRouteLabelProvider(climb.routeId)).value
         : null;
-    final name = switch (gym) {
-      final g? => g.colour ?? g.grade ?? g.wall ?? '',
-      null => hit?.route.name ?? '',
-    };
-    final place = switch (gym) {
-      final g? when g.colour != null || g.grade != null => g.wall,
-      final _? => null,
-      null => hit?.crag,
+    final (:name, :place) = switch (gym) {
+      final g? => gymClimbText(g),
+      null => (name: hit?.route.name ?? '', place: hit?.crag),
     };
     final feel = climb.feel == null
         ? ''

@@ -4,6 +4,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/main.dart' as app;
 import 'package:sva/src/feed/feed_card.dart';
+import 'package:sva/src/logging/gym_tiles.dart';
 import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/places/route_search_screen.dart';
 import 'package:sva/src/sessions/session_screen.dart';
@@ -170,15 +171,18 @@ void main() {
     await tap(inSheet(find.text(l10n.logIndoor)));
     final gymChip = inSheet(find.widgetWithText(FilterChip, gym));
     if (gymChip.evaluate().isNotEmpty) await tap(gymChip);
-    Finder tile(String colour, String kind) =>
-        inSheet(find.bySemanticsLabel(l10n.logIndoorTopped(colour, kind)));
-    final boulder = l10n.gymWallKind('boulder');
+    Finder tile(String colour) => inSheet(
+      find.ancestor(
+        of: find.text(colour),
+        matching: find.byType(GymTileButton),
+      ),
+    );
     final rope = l10n.gymWallKind('rope');
-    await tap(tile('Green', boulder));
-    await tap(tile('Blue', boulder));
+    await tap(tile('Green'));
+    await tap(tile('Blue'));
     await tap(inSheet(find.text(l10n.logIndoorDidntTop)));
     await tap(inSheet(find.text(rope)));
-    await tap(tile('Blue', rope));
+    await tap(tile('Blue'));
     await tap(inSheet(find.text(l10n.logSave(3))));
 
     await _pumpUntilFound(tester, find.text(l10n.logSaved));

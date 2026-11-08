@@ -83,10 +83,8 @@ class FeedCard extends ConsumerWidget {
         for (final climb in shown)
           if (labels[climb.routeId] case final label?)
             SvaCardClimb(
-              name: label.colour ?? label.grade ?? label.wall ?? '',
-              detail: label.colour != null || label.grade != null
-                  ? label.wall ?? ''
-                  : '',
+              name: gymClimbText(label).name,
+              detail: gymClimbText(label).place ?? '',
               style: climb.style,
               styleLabel: l10n.ascentStyle(climb.style),
               grade: switch (label.grade) {

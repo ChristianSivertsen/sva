@@ -742,8 +742,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIndoorHint => 'Walls and boards';
 
   @override
-  String get logIndoorNoGym =>
-      'Set up the gym you climb at first: its walls and colours.';
+  String get logIndoorNoTiles =>
+      'Nothing to tap yet. Add colours or choose a grading for this gym in Settings, under Gyms.';
+
+  @override
+  String get logIndoorLoadFailed =>
+      'Couldn\'t load your gyms. Close the log and try again.';
+
+  @override
+  String logIndoorKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'boulder': 'boulder',
+      'rope': 'rope',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get logIndoorNoGym => 'Set up your gym first: its walls and colours.';
 
   @override
   String get logIndoorNoWalls =>
@@ -759,11 +776,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIndoorTapHint => 'Tap a colour each time you top it.';
 
   @override
-  String get logIndoorUngraded => 'Topped';
+  String get logIndoorUngraded => 'Climb';
 
   @override
   String logIndoorTopped(String colour, String kind) {
-    return 'Topped a $colour on $kind';
+    return 'Topped $colour, $kind';
   }
 
   @override

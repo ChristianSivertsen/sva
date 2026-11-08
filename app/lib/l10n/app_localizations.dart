@@ -1058,10 +1058,28 @@ abstract class AppLocalizations {
   /// **'Walls and boards'**
   String get logIndoorHint;
 
+  /// No description provided for @logIndoorNoTiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to tap yet. Add colours or choose a grading for this gym in Settings, under Gyms.'**
+  String get logIndoorNoTiles;
+
+  /// No description provided for @logIndoorLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your gyms. Close the log and try again.'**
+  String get logIndoorLoadFailed;
+
+  /// Lower case, inside a sentence such as 'Topped Blue, boulder'.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, boulder{boulder} rope{rope} other{}}'**
+  String logIndoorKind(String kind);
+
   /// No description provided for @logIndoorNoGym.
   ///
   /// In en, this message translates to:
-  /// **'Set up the gym you climb at first: its walls and colours.'**
+  /// **'Set up your gym first: its walls and colours.'**
   String get logIndoorNoGym;
 
   /// No description provided for @logIndoorNoWalls.
@@ -1091,13 +1109,13 @@ abstract class AppLocalizations {
   /// No description provided for @logIndoorUngraded.
   ///
   /// In en, this message translates to:
-  /// **'Topped'**
+  /// **'Climb'**
   String get logIndoorUngraded;
 
   /// No description provided for @logIndoorTopped.
   ///
   /// In en, this message translates to:
-  /// **'Topped a {colour} on {kind}'**
+  /// **'Topped {colour}, {kind}'**
   String logIndoorTopped(String colour, String kind);
 
   /// No description provided for @logIndoorAddedSend.
