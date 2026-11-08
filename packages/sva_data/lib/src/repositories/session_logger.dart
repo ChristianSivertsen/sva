@@ -279,6 +279,11 @@ class SessionLogger {
         throw ArgumentError.value(i, 'routes', 'a route or a wall, not both');
       }
     }
+    // Each route once, so its climbs are checked against each other.
+    final existing = [for (final r in draft.routes) ?r.routeId];
+    if (existing.toSet().length != existing.length) {
+      throw ArgumentError.value(existing, 'routes', 'a route twice');
+    }
     for (final climb in draft.climbs) {
       if (climb.route < 0 || climb.route >= draft.routes.length) {
         throw ArgumentError.value(climb.route, 'route');
@@ -325,6 +330,8 @@ class SessionLogger {
                       r.kind.equals('gym') &
                       r.areaId.equals(draft.gymId) &
                       r.createdBy.equals(userId) &
+                      // Gone, or its wall was reset: nothing to log on.
+                      r.status.equals('open') &
                       r.deletedAt.isNull(),
                 ))
                 .getSingleOrNull();

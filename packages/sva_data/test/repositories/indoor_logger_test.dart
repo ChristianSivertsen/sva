@@ -194,4 +194,78 @@ void main() {
       reason: 'no new route left behind',
     );
   });
+
+  test('M3-4: an indoor session takes each route once, and none that is '
+      'gone', () async {
+    final tuesday = await logger.logIndoor(
+      draft(
+        '2026-11-03',
+        [IndoorRouteDraft(wallId: cave, colourId: blue)],
+        [climb(0, AscentStyle.attempt, 1)],
+      ),
+      userId: 'me',
+    );
+    final route = (await AscentRepository(
+      db,
+    ).watchInSession(tuesday).first).single.routeId;
+    // Twice, the two redpoints would never be checked against each other.
+    await expectLater(
+      logger.logIndoor(
+        draft(
+          '2026-11-05',
+          [IndoorRouteDraft(routeId: route), IndoorRouteDraft(routeId: route)],
+          [
+            climb(0, AscentStyle.redpoint, 2),
+            climb(1, AscentStyle.redpoint, 2),
+          ],
+        ),
+        userId: 'me',
+      ),
+      throwsArgumentError,
+    );
+    await GymRouteRepository(db).markGone(route, userId: 'me');
+    await expectLater(
+      logger.logIndoor(
+        draft(
+          '2026-11-05',
+          [IndoorRouteDraft(routeId: route)],
+          [climb(0, AscentStyle.redpoint, 2)],
+        ),
+        userId: 'me',
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test("M3-4: a graded gym's climbs save with their grade", () async {
+    final gyms = GymEditor(db);
+    final graded = await gyms.addGym(
+      const NewGym(name: 'Harbour', countryCode: 'NO', grading: 'standard'),
+      walls: const [WallDraft(name: 'Cave', kind: 'boulder')],
+      userId: 'me',
+    );
+    final wall = (await gyms.setup(graded, userId: 'me'))!.walls.single.id;
+    final id = await logger.logIndoor(
+      IndoorSessionDraft(
+        gymId: graded,
+        localDate: '2026-11-05',
+        tz: 'Europe/Oslo',
+        visibility: 'private',
+        routes: [
+          IndoorRouteDraft(wallId: wall, gradeId: seedId('grade:font:6A')),
+        ],
+        climbs: [climb(0, AscentStyle.flash, 1)],
+      ),
+      userId: 'me',
+    );
+    final route = (await AscentRepository(
+      db,
+    ).watchInSession(id).first).single.routeId;
+    expect(await GymRouteRepository(db).label(route, userId: 'me'), (
+      colour: null,
+      grade: '6A',
+      gradeSystem: 'font',
+      wall: 'Cave',
+    ));
+  });
 }
