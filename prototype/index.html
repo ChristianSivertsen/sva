@@ -505,7 +505,7 @@ function gymDay(date,gid='gym1'){
   newDay(id,date,gid,'me',{partners:rng()<.6?[pick(['ingrid','mats','ane'])]:[],kudos:ri(5),title:rng()<.5?pick(['Tuesday training','Blues and reds','Cave session','Lunch laps','Board and blues']):'',shoe:'gym'});
   const n=5+ri(6);
   for(let i=0;i<n;i++){
-    const b=rng()<.6,w=pick(walls.filter(x=>x.kind===(b?'Boulder':'Rope'))),type=b?'Boulder':pick(['Top-rope','Lead','Lead','Auto-belay']);
+    const b=rng()<.6,w=pick(walls.filter(x=>x.kind===(b?'Boulder':'Rope'))),type=b?'Boulder':pick(['Top-rope','Lead','Lead']);
     const ci=clamp(Math.round((b?(L.b-1)/2:(L.r-2)/2)+(rng()-.6)*2.2),0,4),c=sc[ci],diff=(b?(c.bmin+c.bmax)/2-L.b:(c.rmin+c.rmax)/2-L.r);
     const p=clamp(.7-.3*diff,.1,.95),ok=rng()<p,style=ok?(rng()<.6?'Flash':'Redpoint'):'Attempt';
     const inl=makeIndoor(gid,w.id,type,ci,rng()<.8?w.angle:pick(['Slab','Vertical','Overhang','Roof']),[pick(['Crimps','Slopers','Pinches','Jugs','Pockets'])]);
@@ -992,7 +992,7 @@ function indoorHTML(){
    ${g.walls.length>1?`<div class="field"><span class="lbl">Wall</span><div class="chips">${g.walls.map(x=>`<button class="chip ${L.wall===x.id?'on':''}" data-a="pickWall" data-id="${x.id}" aria-pressed="${L.wall===x.id}">${esc(x.name)} <span class="muted" style="font-size:11px">${x.height} m · ${x.angle}</span></button>`).join('')}</div></div>`:''}
    <p class="note">${esc(w.name)} is ${w.height} m and set as ${w.angle.toLowerCase()}, so new climbs here start with that. Indoor climbs stay in this session and are not added to the route list. <button class="act" style="display:inline;padding:2px 8px" data-a="editGym" data-id="${L.gym}">Edit gym, walls and grades</button></p>
    <div class="card stack" style="gap:14px">
-    <div class="field"><span class="lbl">Type</span>${chipGroup('itype',w.kind==='Boulder'?['Boulder']:['Lead','Top-rope','Auto-belay'],ic.type)}</div>
+    <div class="field"><span class="lbl">Type</span>${chipGroup('itype',w.kind==='Boulder'?['Boulder']:['Lead','Top-rope'],ic.type)}</div>
     <div class="field"><span class="lbl">Grade${g.grading==='colour'?' (gym colours)':''}</span>${grade}</div>
     <div class="field"><span class="lbl">Wall angle</span>${chipGroup('iangle',DIMS.angle.all,ic.angle)}</div>
     <div class="field"><span class="lbl">Main holds</span>${chipGroup('iholds',DIMS.holds.all,ic.holds,true)}</div>
