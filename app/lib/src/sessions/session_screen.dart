@@ -204,6 +204,19 @@ class _ClimbCard extends ConsumerWidget {
     final text = context.svaText;
     final muted = text.caption.copyWith(color: context.svaColors.textMuted);
     final hit = ref.watch(routeHitProvider(climb.routeId)).value;
+    // A gym climb has no route name: it shows as colour (or grade) and wall.
+    final gym = climb.setting == 'indoor'
+        ? ref.watch(gymRouteLabelProvider(climb.routeId)).value
+        : null;
+    final name = switch (gym) {
+      final g? => g.colour ?? g.grade ?? g.wall ?? '',
+      null => hit?.route.name ?? '',
+    };
+    final place = switch (gym) {
+      final g? when g.colour != null || g.grade != null => g.wall,
+      final _? => null,
+      null => hit?.crag,
+    };
     final feel = climb.feel == null
         ? ''
         : l10n.attributeValue(climb.feel!.replaceAll('.', '_'));
@@ -222,14 +235,15 @@ class _ClimbCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Expanded(
-                      child: Text(hit?.route.name ?? '', style: text.headline),
-                    ),
-                    if (hit?.grade case final grade?)
-                      GradeBadge(grade, system: hit?.gradeSystem),
+                    Expanded(child: Text(name, style: text.headline)),
+                    if (gym?.grade ?? hit?.grade case final grade?)
+                      GradeBadge(
+                        grade,
+                        system: gym?.gradeSystem ?? hit?.gradeSystem,
+                      ),
                   ],
                 ),
-                if (hit?.crag case final crag?) Text(crag, style: muted),
+                if (place case final place?) Text(place, style: muted),
                 const SizedBox(height: SvaSpace.xs),
                 Wrap(
                   spacing: SvaSpace.xs,

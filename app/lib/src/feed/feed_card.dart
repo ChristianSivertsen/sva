@@ -37,6 +37,18 @@ class FeedCard extends ConsumerWidget {
     final weather = ref.watch(sessionWeatherProvider(session.id)).value;
     final tags = ref.watch(sessionTagsProvider(session.id)).value ?? [];
     final showGrade = ref.watch(gradeDisplayProvider);
+    // Gym climbs have no route name: they show as colour (or grade) and
+    // wall, at the session's gym.
+    final indoor = session.setting == 'indoor';
+    final gym = switch (session.areaId) {
+      final id? when indoor => ref.watch(placeNameProvider(id)).value,
+      _ => null,
+    };
+    final labels = {
+      if (indoor)
+        for (final id in {for (final c in climbs) c.routeId})
+          id: ref.watch(gymRouteLabelProvider(id)).value,
+    };
 
     final crags = {for (final c in climbs) ?hits[c.routeId]?.crag};
     final shown = climbs.take(_climbsShown);
@@ -54,9 +66,11 @@ class FeedCard extends ConsumerWidget {
     ].take(_tagsShown).toList();
 
     return SvaSessionCard(
-      place: crags.isEmpty
-          ? l10n.feedSetting(session.setting)
-          : crags.join(', '),
+      place:
+          gym ??
+          (crags.isEmpty
+              ? l10n.feedSetting(session.setting)
+              : crags.join(', ')),
       when: [
         formatDay(l10n, session.localDate),
         if (partners case final names? when names.isNotEmpty)
@@ -67,13 +81,27 @@ class FeedCard extends ConsumerWidget {
       description: session.description,
       climbs: [
         for (final climb in shown)
-          SvaCardClimb(
-            name: hits[climb.routeId]?.route.name ?? '',
-            detail: _detail(l10n, hits[climb.routeId]?.route),
-            style: climb.style,
-            styleLabel: l10n.ascentStyle(climb.style),
-            grade: _grade(hits[climb.routeId], showGrade),
-          ),
+          if (labels[climb.routeId] case final label?)
+            SvaCardClimb(
+              name: label.colour ?? label.grade ?? label.wall ?? '',
+              detail: label.colour != null || label.grade != null
+                  ? label.wall ?? ''
+                  : '',
+              style: climb.style,
+              styleLabel: l10n.ascentStyle(climb.style),
+              grade: switch (label.grade) {
+                final grade? => showGrade(grade, label.gradeSystem),
+                null => null,
+              },
+            )
+          else
+            SvaCardClimb(
+              name: hits[climb.routeId]?.route.name ?? '',
+              detail: _detail(l10n, hits[climb.routeId]?.route),
+              style: climb.style,
+              styleLabel: l10n.ascentStyle(climb.style),
+              grade: _grade(hits[climb.routeId], showGrade),
+            ),
       ],
       more: climbs.length > _climbsShown
           ? l10n.feedMoreClimbs(climbs.length - _climbsShown)
