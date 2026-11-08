@@ -57,8 +57,36 @@ final class WallDraft {
   final String? angle;
 }
 
-/// A gym with its grading and the user's walls on it, in wall order.
-typedef GymSetup = ({Area gym, String grading, List<GymWall> walls});
+/// One colour in a gym's colour scale, as the gym form fills it in. With
+/// an [id] it changes that colour; without, it adds one. The ranges are
+/// spans on the shared difficulty scale (sva_core `colourRange`), `null`
+/// when the colour is not mapped.
+final class ColourDraft {
+  const new({
+    required this.name,
+    required this.colourHex,
+    this.id,
+    this.boulder,
+    this.route,
+  });
+
+  final String? id;
+  final String name;
+
+  /// `#RRGGBB`.
+  final String colourHex;
+  final ScoreRange? boulder;
+  final ScoreRange? route;
+}
+
+/// A gym with its grading and the user's walls and colours on it, each in
+/// order (colours easiest first).
+typedef GymSetup = ({
+  Area gym,
+  String grading,
+  List<GymWall> walls,
+  List<GymColourGrade> colours,
+});
 
 /// Sets up gyms and their walls from the gym form. The gym is a shared
 /// place, created private like a crag; walls are each user's own for now
@@ -71,22 +99,27 @@ class GymEditor {
   new _(this.db, this.clock)
     : _areas = AreaRepository(db, clock: clock),
       _walls = GymWallRepository(db, clock: clock),
+      _colours = GymColourGradeRepository(db, clock: clock),
       _attributes = AttributeRepository(db, clock: clock);
 
   final SvaDatabase db;
   final DateTime Function() clock;
   final AreaRepository _areas;
   final GymWallRepository _walls;
+  final GymColourGradeRepository _colours;
   final AttributeRepository _attributes;
 
-  /// Adds a gym with [walls] for [userId]. Returns the gym's id.
+  /// Adds a gym with [walls] and [colours] for [userId]. Returns the
+  /// gym's id.
   Future<String> addGym(
     NewGym gym, {
     required List<WallDraft> walls,
     required String userId,
+    List<ColourDraft> colours = const [],
   }) async {
     final name = _checkGym(gym);
     await _checkWalls(walls);
+    _checkColours(colours);
     return await db.transaction(() async {
       final id = await _areas.createPrivate(
         AreasCompanion(
@@ -112,22 +145,25 @@ class GymEditor {
             ),
           );
       await _saveWalls(id, walls, userId);
+      await _saveColours(id, colours, userId);
       return id;
     });
   }
 
-  /// Changes [userId]'s private gym [gymId] and makes its walls exactly
-  /// [walls], as [saveWalls] does. Throws [ArgumentError] for a gym that
-  /// is not the user's to change; walls on a shared gym go through
-  /// [saveWalls] alone.
+  /// Changes [userId]'s private gym [gymId] and makes its walls and
+  /// colours exactly [walls] and [colours], as [saveOwn] does. Throws
+  /// [ArgumentError] for a gym that is not the user's to change; walls and
+  /// colours on a shared gym go through [saveOwn] alone.
   Future<void> updateGym(
     String gymId,
     NewGym gym, {
     required List<WallDraft> walls,
     required String userId,
+    List<ColourDraft> colours = const [],
   }) async {
     final name = _checkGym(gym);
     await _checkWalls(walls);
+    _checkColours(colours);
     await db.transaction(() async {
       final area = await _visibleGym(gymId, userId);
       if (area.createdBy != userId || area.visibility != 'private') {
@@ -152,26 +188,31 @@ class GymEditor {
         ),
       );
       await _saveWalls(gymId, walls, userId);
+      await _saveColours(gymId, colours, userId);
     });
   }
 
-  /// Makes [userId]'s walls on gym [gymId] exactly [walls]: drafts with
-  /// an id change that wall, new ones are added and walls left out are
-  /// deleted (soft, like every delete). Works on any gym the user can see,
-  /// since walls are each user's own.
-  Future<void> saveWalls(
+  /// Makes [userId]'s walls and colours on gym [gymId] exactly [walls]
+  /// and [colours]: drafts with an id change that row, new ones are added
+  /// and rows left out are deleted (soft, like every delete). Works on any
+  /// gym the user can see, since walls and colours are each user's own.
+  Future<void> saveOwn(
     String gymId, {
     required List<WallDraft> walls,
     required String userId,
+    List<ColourDraft> colours = const [],
   }) async {
     await _checkWalls(walls);
+    _checkColours(colours);
     await db.transaction(() async {
       await _visibleGym(gymId, userId);
       await _saveWalls(gymId, walls, userId);
+      await _saveColours(gymId, colours, userId);
     });
   }
 
-  /// Gym [gymId] with its grading and [userId]'s walls, or `null` when it
+  /// Gym [gymId] with its grading and [userId]'s walls and colours, or
+  /// `null` when it
   /// is gone or private to someone else.
   Future<GymSetup?> setup(String gymId, {required String userId}) async {
     final gym = await _gymFor(gymId, userId);
@@ -184,6 +225,7 @@ class GymEditor {
       gym: gym,
       grading: profile?.grading ?? 'none',
       walls: await _wallsOf(gymId, userId),
+      colours: await _coloursOf(gymId, userId),
     );
   }
 
@@ -291,6 +333,70 @@ class GymEditor {
         await _walls.update(id, fields, userId: userId);
       } else {
         await _walls.create(
+          fields.copyWith(gymId: Value(gymId)),
+          userId: userId,
+        );
+      }
+    }
+  }
+
+  static void _checkColours(List<ColourDraft> colours) {
+    for (final colour in colours) {
+      RouteEditor.checkName(colour.name);
+      if (!RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(colour.colourHex)) {
+        throw ArgumentError.value(colour.colourHex, 'colourHex');
+      }
+      for (final range in [colour.boulder, colour.route]) {
+        if (range case (:final min, :final max)
+            when !min.isFinite || !max.isFinite || min > max) {
+          throw ArgumentError.value(range, 'range');
+        }
+      }
+    }
+  }
+
+  Future<List<GymColourGrade>> _coloursOf(String gymId, String userId) =>
+      (db.select(db.gymColourGrades)
+            ..where(
+              (c) =>
+                  c.gymId.equals(gymId) &
+                  c.ownerId.equals(userId) &
+                  c.deletedAt.isNull(),
+            )
+            ..orderBy([(c) => OrderingTerm.asc(c.sort)]))
+          .get();
+
+  Future<void> _saveColours(
+    String gymId,
+    List<ColourDraft> colours,
+    String userId,
+  ) async {
+    final current = {for (final c in await _coloursOf(gymId, userId)) c.id};
+    final kept = {for (final c in colours) ?c.id};
+    if (!current.containsAll(kept)) {
+      throw ArgumentError.value(
+        kept.difference(current),
+        'colours',
+        'not here',
+      );
+    }
+    for (final id in current.difference(kept)) {
+      await _colours.softDelete(id, userId: userId);
+    }
+    for (final (sort, colour) in colours.indexed) {
+      final fields = GymColourGradesCompanion(
+        name: Value(colour.name.trim()),
+        colourHex: Value(colour.colourHex.toUpperCase()),
+        sort: Value(sort),
+        boulderMinScore: Value(colour.boulder?.min),
+        boulderMaxScore: Value(colour.boulder?.max),
+        routeMinScore: Value(colour.route?.min),
+        routeMaxScore: Value(colour.route?.max),
+      );
+      if (colour.id case final id?) {
+        await _colours.update(id, fields, userId: userId);
+      } else {
+        await _colours.create(
           fields.copyWith(gymId: Value(gymId)),
           userId: userId,
         );
