@@ -231,6 +231,11 @@ typedef RouteClimb = ({
 /// One live ascent in a route's log, with its id and session.
 typedef RouteLogEntry = ({String id, String sessionId, LoggedAscent ascent});
 
+/// Ascent types a climb in an indoor session can have. An auto-belay climb
+/// logs as top rope (docs/schema.md, ascents); outdoors, the session
+/// logger offers `outdoorAscentTypes`.
+const indoorAscentTypes = {'lead', 'toprope', 'boulder'};
+
 /// Climbs logged in a session.
 class AscentRepository extends Repository<$AscentsTable, Ascent> {
   new(super.db, {super.clock});
@@ -251,6 +256,24 @@ class AscentRepository extends Repository<$AscentsTable, Ascent> {
     'discipline',
   };
 
+  /// Changes one of [userId]'s ascents. An indoor climb's type stays one of
+  /// [indoorAscentTypes], as when it was logged.
+  @override
+  Future<void> update(
+    String id,
+    Insertable<Ascent> changes, {
+    required String userId,
+  }) async {
+    final type = changes.toColumns(true)['ascent_type'];
+    if (type is Variable<String> && !indoorAscentTypes.contains(type.value)) {
+      final row = await get(id);
+      if (row?.setting == 'indoor') {
+        throw ArgumentError.value(type.value, 'ascentType', 'not indoors');
+      }
+    }
+    await super.update(id, changes, userId: userId);
+  }
+
   /// Adds an ascent to one of [userId]'s sessions, on a route [userId] can
   /// see. Owner, visibility and the setting and discipline caches come from
   /// the session and the route, not from the caller. Returns the new id.
@@ -270,6 +293,14 @@ class AscentRepository extends Repository<$AscentsTable, Ascent> {
               ))
               .getSingleOrNull();
       if (session == null) throw NotYourRow('sessions', sessionId);
+      if (session.setting == 'indoor' &&
+          !indoorAscentTypes.contains(draft.ascentType.value)) {
+        throw ArgumentError.value(
+          draft.ascentType.value,
+          'ascentType',
+          'not indoors',
+        );
+      }
       final route =
           await (db.select(db.routes)..where(
                 (r) =>

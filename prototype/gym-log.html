@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sva gym log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Quick gym logging: bouldering and mixed indoor sessions. Tokens and components are copied from index.html and follow
+   docs/DESIGN.md. Bare :root is Daylight; Midnight sun comes from the OS dark setting or data-theme="dark" on .phone. */
+:root,.phone[data-theme="light"]{
+  color-scheme:light;
+  --bg:#FBF5EC; --surface:#FFFFFF; --sunk:#F3EADB; --line:#E4D8C5; --ink:#1B2240; --muted:#5B6185;
+  --granite:#AC482F; --accent:#AC482F; --accent-ink:#FFFFFF; --sea:#2E6E7E;
+  --os:#2E6E7E; --fl:#85590A; --rp:#AC482F; --att:#5B6185; --good:#2D764C; --bad:#B33A30;
+  --desk:#EDE3D2; --backdrop:rgba(14,19,40,.45);
+  --f-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+ :root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#1B2240; --surface:#232B4D; --sunk:#141A33; --line:#343D63; --ink:#F7E7CE; --muted:#A9AECB;
+  --granite:#E07A5F; --accent:#F2B544; --accent-ink:#1B2240; --sea:#6FB3C2;
+  --os:#6FB3C2; --fl:#F2B544; --rp:#E07A5F; --att:#A9AECB; --good:#7CC49A; --bad:#F07A70;
+  --desk:#0E1328;
+ }
+}
+:root[data-theme="dark"],.phone[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#1B2240; --surface:#232B4D; --sunk:#141A33; --line:#343D63; --ink:#F7E7CE; --muted:#A9AECB;
+  --granite:#E07A5F; --accent:#F2B544; --accent-ink:#1B2240; --sea:#6FB3C2;
+  --os:#6FB3C2; --fl:#F2B544; --rp:#E07A5F; --att:#A9AECB; --good:#7CC49A; --bad:#F07A70;
+  --desk:#0E1328;
+}
+html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding-block:20px;box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
+.desk{display:flex;gap:6px;font-size:12px;color:var(--muted);align-items:center}
+.desk button{border:1px solid var(--line);background:transparent;border-radius:8px;padding:4px 10px;font-size:12px;color:var(--ink)}
+.phone{width:min(400px,100%);height:min(860px,calc(100% - 40px));background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:30px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 30px 60px -30px rgba(0,0,0,.45)}
+@media (max-width:520px){body{display:block;padding-block:0}.desk{display:none}.phone{width:100%;height:100%;border:0;border-radius:0;box-shadow:none}}
+.screen{flex:1;overflow-y:auto;padding:0 16px 24px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px 12px}
+h1{font-family:var(--f-display);font-optical-sizing:auto;font-weight:600;font-size:32px;line-height:36px;margin:0}
+h2{font-family:var(--f-display);font-optical-sizing:auto;font-weight:600;font-size:22px;line-height:28px;margin:0}
+h3{font-size:15px;font-weight:600;margin:0}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.cap{font-size:12px;line-height:16px;color:var(--muted)}
+.mono{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:8px}
+.wrap{flex-wrap:wrap}
+.between{justify-content:space-between}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.section{display:flex;flex-direction:column;gap:10px;padding-top:18px}
+.grade{font-weight:700;font-size:12px;line-height:16px;font-variant-numeric:tabular-nums;padding:3px 7px;border-radius:6px;white-space:nowrap;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.style{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;color:var(--bg);white-space:nowrap}
+.s-Flash{background:var(--fl)}.s-Redpoint{background:var(--rp)}.s-Repeat{background:var(--muted)}.s-Attempt{background:transparent;color:var(--muted);border:1px solid var(--att)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid transparent;background:var(--sunk);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:500;line-height:18px;display:inline-flex;align-items:center;gap:6px;min-height:36px;transition:background-color .12s ease-out,color .12s ease-out}
+.chip:hover{border-color:var(--line)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip small{font-size:11px;font-weight:400;opacity:.8}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(127,127,127,.4);flex:none}
+.seg{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 6px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap;min-height:36px}
+.seg button.on{background:var(--surface);color:var(--ink);font-weight:600}
+.btn{border:1px solid var(--accent);border-radius:12px;padding:12px 16px;font-weight:600;background:var(--accent);color:var(--accent-ink);font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:8px;min-height:36px}
+.btn.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.iconbtn{border:0;background:transparent;padding:6px;border-radius:8px;display:grid;place-items:center;color:var(--ink);min-width:36px;min-height:36px}
+.iconbtn:hover{background:var(--sunk)}
+.field{display:flex;flex-direction:column;gap:6px}
+.lbl{font-size:13px;font-weight:500;color:var(--muted)}
+.input{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
+textarea.input{resize:vertical;min-height:64px}
+.auto{display:flex;gap:10px;align-items:center;background:var(--sunk);border-radius:8px;padding:10px 12px;font-size:13px}
+.auto b{font-weight:500;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--muted);margin:0}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:18px}
+.stepper button[disabled]{opacity:.35;cursor:not-allowed}
+.stepper span{font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;min-width:26px;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat .v{font-weight:600;font-size:22px;line-height:26px;font-variant-numeric:tabular-nums}
+.stat .k{font-size:12px;line-height:16px;color:var(--muted)}
+/* tab bar */
+.tabbar{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--sunk);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.tab{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:500;color:var(--muted);padding:4px 0}
+.tab.on{color:var(--ink);font-weight:600}
+.tab span.plus{width:52px;height:52px;border-radius:16px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-22px;box-shadow:0 8px 18px -8px rgba(0,0,0,.5)}
+/* session */
+.shead{display:flex;align-items:center;gap:8px;padding:14px 12px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
+.shead .t{flex:1;min-width:0}
+.shead h2{font-size:19px;line-height:24px}
+.live{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--good);display:inline-flex;align-items:center;gap:5px}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.tiles{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 16px) / 3);gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.tiles::-webkit-scrollbar{display:none}
+.tile.ramp{box-shadow:inset 0 0 0 1px var(--line)}
+/* A numbered grade is the whole label, so it gets the Number style from DESIGN.md. */
+.tile.ramp b{font-size:22px;line-height:26px;font-variant-numeric:tabular-nums}
+.tiles .tile{scroll-snap-align:start;min-height:124px}
+.winnav{display:flex;align-items:center;gap:2px}
+.winnav .iconbtn[disabled]{opacity:.3;cursor:not-allowed}
+.tile{position:relative;border:0;border-radius:12px;padding:12px 10px 10px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35);transition:transform .12s ease-out}
+.tile:active{transform:scale(.97)}
+.tile b{font-size:15px;font-weight:600}
+.tile .gr{font-size:11px;font-variant-numeric:tabular-nums;opacity:.85}
+.tile .ct{display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.tile .ct .n{font-size:26px;line-height:28px;font-weight:600}
+.tile .ct .n small{font-size:12px;font-weight:500;margin-left:4px}
+.tile .ct .sub{font-size:11px;opacity:.85}
+.tile.bump{animation:bump .45s ease-out}
+.tile.bump::after{content:"";position:absolute;inset:0;border-radius:12px;box-shadow:0 0 0 3px var(--ink);animation:ring .6s ease-out forwards;pointer-events:none}
+.plus1{position:absolute;right:10px;bottom:38px;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;animation:float .8s ease-out forwards;pointer-events:none}
+@keyframes bump{30%{transform:scale(.94)}70%{transform:scale(1.03)}}
+@keyframes ring{from{opacity:1}to{opacity:0;transform:scale(1.06)}}
+@keyframes float{from{opacity:0;transform:translateY(6px)}25%{opacity:1}to{opacity:0;transform:translateY(-22px)}}
+.strip .chip{min-height:32px;padding:5px 9px}
+.strip .qrow{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:8px}
+.strip .seg button{min-height:32px;padding:5px 4px;font-size:12px}
+.strip .done.try{color:var(--muted)}
+.strip .done{white-space:nowrap;font-size:13px;font-weight:600;color:var(--good);display:inline-flex;align-items:center;gap:4px}
+.tile .more{position:absolute;top:4px;right:4px;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:inherit;display:grid;place-items:center;opacity:.8}
+.tile .more:hover{background:rgba(127,127,127,.2)}
+.projects{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.proj{flex:none;display:flex;gap:10px;align-items:center;border:1px dashed var(--granite);background:transparent;border-radius:12px;padding:8px 12px;text-align:left;min-height:44px}
+.proj small{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.strip{flex:none;margin:0 10px 8px;max-height:40%;overflow-y:auto;background:var(--surface);border:1px solid var(--granite);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -10px 24px -14px rgba(0,0,0,.45);animation:rise .2s ease-out}
+@keyframes rise{from{transform:translateY(10px);opacity:.5}to{transform:none;opacity:1}}
+.entries{display:flex;flex-direction:column;gap:6px}
+.entry{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 6px 6px 10px;font-size:13px;width:100%;text-align:left}
+.entry .w{color:var(--muted);font-size:12px}
+/* Swipe a logged climb left to show Remove; swipe far to remove it straight away. */
+.swipe{position:relative;border-radius:8px;overflow:hidden}
+.swipe-del{position:absolute;top:0;right:0;bottom:0;width:96px;border:0;background:var(--bad);color:var(--surface);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:flex-end;padding-right:16px}
+.swipe .entry{position:relative;touch-action:pan-y;transition:transform .18s ease-out}
+.swipe .entry.dragging{transition:none}
+.sfoot{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface);display:flex;gap:8px;align-items:center}
+.sfoot .btn{flex:1}
+/* sheets */
+.sheet{position:absolute;inset:12px 0 0 0;background:var(--bg);z-index:20;display:flex;flex-direction:column;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 -10px 30px -12px rgba(0,0,0,.45),0 0 0 100vmax var(--backdrop);animation:up .3s ease-out}
+@keyframes up{from{transform:translateY(32px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 12px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
+.sheet-head h2{flex:1;text-align:center;font-size:19px;line-height:24px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-body{flex:1;overflow-y:auto;padding:16px 16px 24px;display:flex;flex-direction:column;gap:18px}
+.sheet-foot{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface);display:flex;gap:8px}
+.sheet-foot .btn{flex:1}
+.bar-row{display:grid;grid-template-columns:62px 1fr 28px;gap:8px;align-items:center;font-size:13px}
+.bar-track{height:14px;background:var(--sunk);border-radius:4px;overflow:hidden;display:flex}
+.bar-track i{display:block;height:100%}
+.bar-row .num{text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.toast{display:flex;align-items:center;justify-content:space-between;gap:12px;position:absolute;left:16px;right:16px;bottom:84px;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;font-size:14px;z-index:30;animation:rise .2s ease-out}
+.toast button{border:1px solid currentColor;background:transparent;color:inherit;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:600}
+@media (prefers-reduced-motion:reduce){.swipe .entry{transition:none}.sheet,.strip,.toast,.tile.bump,.tile.bump::after{animation:none}.tile{transition:none}.plus1{animation:none;opacity:0}}
+</style>
+</head>
+<body>
+<div class="desk" role="group" aria-label="Prototype controls">Prototype · theme
+  <button data-a="theme" data-v="">System</button><button data-a="theme" data-v="light">Daylight</button><button data-a="theme" data-v="dark">Midnight sun</button>
+  · gym <button data-a="gym" data-v="home">Colours</button><button data-a="gym" data-v="harbour">V and French</button>
+  · <button data-a="elite" id="elite" aria-pressed="false">Elite grades: off</button>
+</div>
+<div class="phone" id="phone"></div>
+<script>
+/* ---------- example data: a gym with colour grades (same as index.html) and one that grades each climb ---------- */
+const FONT=['4','5','5+','6A','6A+','6B','6B+','6C','6C+','7A','7A+','7B','7B+','7C'];
+const FRENCH=['4','5a','5b','5c','6a','6a+','6b','6b+','6c','6c+','7a','7a+','7b','7b+','7c','7c+','8a'];
+const COLOURS=[
+  {n:'Green',hex:'#3FA34D',b:[0,1],r:[0,2]},
+  {n:'Blue',hex:'#2F6FD1',b:[2,4],r:[4,6]},
+  {n:'Yellow',hex:'#E8C21C',b:[4,6],r:[6,8]},
+  {n:'Red',hex:'#D33A2C',b:[6,8],r:[8,10]},
+  {n:'Black',hex:'#1E1E1E',b:[8,11],r:[10,13]}];
+const WALLS=[
+  {id:'cave',name:'Cave',height:4.5,angle:'Overhang',kind:'boulder'},
+  {id:'board',name:'Board',height:3.5,angle:'Overhang',kind:'boulder'},
+  {id:'slabb',name:'Slab corner',height:4,angle:'Slab',kind:'boulder'},
+  {id:'main',name:'Main wall',height:15,angle:'Vertical',kind:'rope'},
+  {id:'slab',name:'Slab wall',height:12,angle:'Slab',kind:'rope'}];
+const ANGLES=['Slab','Vertical','Overhang','Roof'];
+const HOLDS=['Crimps','Slopers','Pinches','Jugs','Pockets','Volumes'];
+const MOVES=['Powerful','Technical','Balance','Coordination','Dyno','Compression'];
+const ROPETYPES=[['lead','Lead'],['toprope','Top-rope']];
+const PEOPLE=[{id:'ingrid',n:'Ingrid',here:true},{id:'mats',n:'Mats'},{id:'ane',n:'Ane'}];
+const TODAY='2026-11-05';
+// Grades for gyms that grade each climb, in the user's systems from Settings: V for boulders, French for rope.
+const VSCALE=['V0','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10'];
+const FRENCH_ROPE=FRENCH;
+// Grades above 8a (V11 and up for boulders) only show when Elite grades is on in Settings, next to the tile colours.
+// Most gyms set nothing that hard, so by default the row stops at 8a and V10.
+const ELITE={boulder:['V11','V12','V13','V14','V15','V16','V17'],rope:['8a+','8b','8b+','8c','8c+','9a','9a+','9b','9b+','9c']};
+let showElite=false;
+// history: climbs per colour or grade in your last few months at this gym. The row opens on the three you climb most.
+// seed: gym routes from earlier sessions. Open projects are the ones with tries and no send that have not expired.
+const GYMS={
+  home:{name:'Gnisten, Alta',grading:'colour',history:{boulder:[40,55,30,8,1],rope:[6,25,22,9,1]},seed:()=>[
+    {id:'r1',c:3,kind:'boulder',wall:'cave',prior:3,sent:false,last:'2026-10-29',expires:'2026-12-10'},
+    {id:'r2',c:2,kind:'boulder',wall:'board',prior:2,sent:false,last:'2026-10-22',expires:'2026-11-26'},
+    {id:'r3',c:4,kind:'rope',wall:'main',prior:1,sent:false,last:'2026-10-29',expires:'2026-12-17'},
+    {id:'r4',c:3,kind:'boulder',wall:'slabb',prior:5,sent:false,last:'2026-09-17',expires:'2026-10-29'}]},
+  harbour:{name:'Harbour gym',grading:'standard',history:{boulder:[5,12,25,40,30,14,5,1,0,0,0],rope:[1,2,6,10,22,25,20,9,4,1,0,0,0,0,0,0,0]},seed:()=>[
+    {id:'r1',c:5,kind:'boulder',wall:'cave',prior:3,sent:false,last:'2026-10-29',expires:'2026-12-10'},
+    {id:'r2',c:4,kind:'boulder',wall:'board',prior:2,sent:false,last:'2026-10-22',expires:'2026-11-26'},
+    {id:'r3',c:9,kind:'rope',wall:'main',prior:1,sent:false,last:'2026-10-29',expires:'2026-12-17'},
+    {id:'r4',c:4,kind:'boulder',wall:'slabb',prior:5,sent:false,last:'2026-09-17',expires:'2026-10-29'}]}};
+let gymId='home';
+const gym=()=>GYMS[gymId];
+const byGrade=()=>gym().grading==='standard';
+const usualStart=k=>{const h=gym().history[k];let best=0,bs=-1;for(let i=0;i+3<=h.length;i++){const t=h[i]+h[i+1]+h[i+2];if(t>bs){bs=t;best=i}}return best};
+
+/* ---------- state ---------- */
+let S,uid=0;
+// The rope type is remembered across sessions too. The app would keep it with the user's settings.
+const lastRope={v:'lead',get(){try{return localStorage.getItem('sva.ropeType')||this.v}catch{return this.v}},set(v){this.v=v;try{localStorage.setItem('sva.ropeType',v)}catch{}}};
+function reset(){S={view:'start',live:true,date:TODAY,startedAt:null,kind:'boulder',wall:{boulder:'cave',rope:'main'},ropeType:lastRope.get(),
+  win:{boulder:usualStart('boulder'),rope:usualStart('rope')},routes:gym().seed(),entries:[],last:null,sheet:null,title:'',partners:['ingrid'],vis:'Friends',toast:null,saved:null}}
+reset();
+const theme={v:''};
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lum=h=>{const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))>160?'#161616':'#fff'};
+const wallOf=id=>WALLS.find(w=>w.id===id);
+const routeOf=id=>S.routes.find(r=>r.id===id);
+const range=(c,kind)=>{const [lo,hi]=kind==='boulder'?c.b:c.r,g=kind==='boulder'?FONT:FRENCH;return lo===hi?g[lo]:g[lo]+'–'+g[hi]};
+const fmtDate=d=>{const [y,m,dd]=d.split('-').map(Number);return dd+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+(y!==2026?' '+y:'')};
+const hhmm=t=>t.toTimeString().slice(0,5);
+const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
+const plural=(n,one,many)=>n+' '+(n===1?one:many);
+const kindName=(k,n=1)=>k==='boulder'?(n===1?'boulder':'boulders'):(n===1?'route':'routes');
+const lu=(b,s=20)=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
+const I={check:lu('<path d="M20 6 9 17l-5-5"/>',16),left:lu('<path d="m15 18-6-6 6-6"/>'),right:lu('<path d="m9 18 6-6-6-6"/>'),x:lu('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),more:lu('<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',18),
+  pin:lu('<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>'),
+  plus:lu('<path d="M5 12h14"/><path d="M12 5v14"/>',26),cal:lu('<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>'),
+  home:lu('<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',24),
+  chart:lu('<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',24),
+  user:lu('<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',24),
+  flag:lu('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',24),
+  undo:lu('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/>',16),
+  target:lu('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',18)};
+// Numbered grades fall in bands, each a brand hue that deepens with difficulty: sea for beginner, sun for intermediate,
+// granite for advanced, and night (foam in Midnight sun) for elite when it is on. A band starts pale again, so the step up is easy to see. The app would place grades by the shared
+// difficulty score, and the band limits would be data, not code.
+const isDark=()=>theme.v==='dark'||(theme.v===''&&matchMedia('(prefers-color-scheme: dark)').matches);
+const mixHex=(a,b,t)=>'#'+[0,2,4].map(i=>Math.round(parseInt(a.substr(1+i,2),16)*(1-t)+parseInt(b.substr(1+i,2),16)*t).toString(16).padStart(2,'0')).join('');
+const BANDS=[{n:'Beginner',light:'#2E6E7E',dark:'#6FB3C2'},{n:'Intermediate',light:'#C98A12',dark:'#F2B544'},{n:'Advanced',light:'#AC482F',dark:'#E07A5F'},{n:'Elite',light:'#1B2240',dark:'#F7E7CE'}];
+// Index where intermediate and advanced start: V3 and V7 for boulders, 6a and 7a for rope.
+const BAND_STARTS={boulder:[3,7],rope:[4,10]};
+const ramp=(b,t)=>isDark()?mixHex('#2A3360',BANDS[b].dark,.45+.55*t):mixHex('#F3EADB',BANDS[b].light,.22+.7*t);
+// Everything on the log screen asks for a kind's list: the gym's colours, or its grades.
+function grades(kind){
+  if(!byGrade())return COLOURS.map(c=>({n:c.n,lc:c.n.toLowerCase(),hex:c.hex,sub:range(c,kind)}));
+  const base=kind==='boulder'?VSCALE:FRENCH_ROPE,list=showElite?[...base,...ELITE[kind]]:base;
+  const [i1,i2]=BAND_STARTS[kind],edges=[0,i1,i2,base.length,list.length];
+  return list.map((n,i)=>{const b=i<i1?0:i<i2?1:i<base.length?2:3,span=edges[b+1]-edges[b]-1;
+    return{n,lc:n,hex:ramp(b,span?(i-edges[b])/span:1),sub:BANDS[b].n,ramp:true}});
+}
+const G=(kind,i)=>grades(kind)[i];
+// Your own grade for a climb, stored as personal_grade_id like outdoors. Soft or hard follows from comparing it with the
+// gym's grade, so it is never asked. It lives in details, not the card, since most climbs never need it.
+// Details offer the whole scale. Empty means the middle of the range, or the gym's grade.
+function gradeScale(kind){return byGrade()?grades(kind).map(g=>g.n):kind==='boulder'?FONT:FRENCH}
+// What the chips show as picked: your grade, or in a numbered gym the gym's grade until you change it.
+const shownGrade=e=>{const r=routeOf(e.route);return e.myGrade??(byGrade()?G(r.kind,r.c).n:null)};
+// Text on a ramp shade: whichever of near-black and white has more contrast (WCAG), so it never flips while the fill is still light.
+const relLum=h=>{const c=[1,3,5].map(i=>{const v=parseInt(h.substr(i,2),16)/255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]};
+const textOn=h=>{const L=relLum(h);return (L+.05)/(relLum('#161616')+.05)>=1.05/(L+.05)?'#161616':'#fff'};
+const ink=c=>c.ramp?textOn(c.hex):lum(c.hex);
+const noun=()=>byGrade()?['grade','grades']:['colour','colours'];
+const gradeBadge=(c,kind)=>`<span class="grade" style="background:${c.hex};color:${ink(c)}">${esc(c.n)}</span>`;
+
+/* ---------- ascent rules (PLAN.md decision 7, gym version) ----------
+   Flash: topped on the first try. Redpoint: topped after earlier tries, counted across sessions. Repeat: topped before.
+   Attempt: tries without a send. Indoor climbs never onsight.
+   On rope, reaching the top after resting on the rope (a take or a fall) is not a send: it counts as a try. */
+const isSend=e=>e.topped&&!e.rested;
+function priorOf(e){
+  const r=routeOf(e.route),before=S.entries.slice(0,S.entries.indexOf(e)).filter(x=>x.route===e.route);
+  return{tries:r.prior+before.reduce((s,x)=>s+(isSend(x)?0:x.tries),0),sent:r.sent||before.some(isSend)};
+}
+function styleOf(e){
+  if(!isSend(e))return'Attempt';
+  const p=priorOf(e);
+  if(p.sent)return'Repeat';
+  return p.tries===0&&e.tries===1?'Flash':'Redpoint';
+}
+const totalTries=e=>priorOf(e).tries+e.tries;
+const isOpenProject=r=>!r.sent&&r.expires>=S.date&&(r.prior>0||S.entries.some(e=>e.route===r.id))&&!S.entries.some(e=>e.route===r.id&&isSend(e));
+const pastProjects=(c,kind)=>S.routes.filter(r=>r.c===c&&r.kind===kind&&r.last&&isOpenProject(r));
+// Open climbs of this colour that you tried earlier in this session, newest first.
+const sessionTries=(c,kind)=>[...S.entries].reverse().map(e=>routeOf(e.route)).filter((r,i,a)=>r.c===c&&r.kind===kind&&!r.last&&a.indexOf(r)===i&&isOpenProject(r));
+const sessionSends=(c,kind)=>S.entries.filter(e=>isSend(e)&&routeOf(e.route).c===c&&routeOf(e.route).kind===kind).map(e=>e.route).filter((v,i,a)=>a.indexOf(v)===i);
+
+function newRoute(c,kind){const r={id:'n'+(++uid),c,kind,wall:S.wall[kind],prior:0,sent:false,last:null,expires:'2026-12-31'};S.routes.push(r);return r}
+function dropIfUnused(id){const r=routeOf(id);if(r&&!r.last&&!S.entries.some(e=>e.route===id))S.routes=S.routes.filter(x=>x.id!==id)}
+
+/* ---------- logging ---------- */
+function logTap(c){
+  const kind=S.kind,open=sessionTries(c,kind)[0];
+  // Topping a colour you fell on earlier tonight is most likely the same climb. Otherwise it is a new one.
+  const r=open||newRoute(c,kind);
+  addEntry(r);
+  S.bump=c+kind;
+}
+function addEntry(r,topped=true){
+  const w=wallOf(r.wall);
+  const e={id:'e'+(++uid),route:r.id,topped,rested:false,myGrade:null,tries:1,ropeType:r.kind==='rope'?S.ropeType:null,angle:r.angle||(w?w.angle:null),holds:[],moves:[],note:'',at:new Date()};
+  S.entries.push(e);S.last=e.id;
+  if(S.live&&!S.startedAt)S.startedAt=new Date(Date.now()-60000);
+  return e;
+}
+function setRoute(e,rid){const old=e.route;e.route=rid;dropIfUnused(old);const r=routeOf(rid),w=wallOf(r.wall);e.angle=r.angle||(w?w.angle:null)}
+
+/* ---------- views ---------- */
+function render(){
+  const ph=$('#phone');ph.dataset.theme=theme.v;
+  ph.innerHTML=(S.view==='start'?startHTML():S.view==='saved'?savedHTML():sessionHTML())+(S.sheet?sheetHTML():'')+(S.toast?`<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo?'<button data-a="toastUndo">Undo</button>':''}</div>`:'');
+  placeTiles(false);
+  if(S.bump!=null)$('#tiles')?.scrollIntoView({block:'nearest'});
+  S.bump=null;
+  const fs=ph.querySelector('.sheet [data-focus]');if(fs)fs.focus();
+}
+// Keep the colour window where you left it after a swipe, without redrawing mid-swipe.
+let swipeT;
+document.addEventListener('scroll',ev=>{const el=ev.target;if(el.id!=='tiles')return;clearTimeout(holdT);clearTimeout(swipeT);
+  swipeT=setTimeout(()=>{const k=S.kind,i=Math.max(0,Math.min(grades(k).length-3,Math.round(el.scrollLeft/tileStep(el))));
+    S.win[k]=i;syncWin()},120)},true);
+const tabbar=()=>`<nav class="tabbar" aria-label="Main">
+  <button class="tab" aria-label="Feed">${I.home}Feed</button><button class="tab" aria-label="History">${I.chart}History</button>
+  <button class="tab on" aria-label="Log" aria-current="page"><span class="plus">${I.plus}</span></button>
+  <button class="tab" aria-label="Projects">${I.flag}Projects</button><button class="tab" aria-label="Profile">${I.user}You</button></nav>`;
+
+function startHTML(){
+  const proj=S.routes.filter(r=>r.last&&isOpenProject(r));
+  return`<div class="screen"><div class="top"><h1>Log</h1></div>
+   <div class="card stack">
+    <div class="row" style="gap:10px"><span style="color:var(--sea)">${I.pin}</span><div><h3>You're at ${esc(gym().name)}</h3><div class="cap">Found from your location when you opened Log</div></div></div>
+    <button class="btn" data-a="start" data-live="1">Start session</button>
+    <p class="note">Tap a ${noun()[0]} each time you climb. Everything else is filled in for you.</p>
+   </div>
+   <div class="section"><span class="eyebrow">Or</span>
+    <button class="btn ghost" data-a="start" data-live="0">${I.cal} Log a past gym session</button>
+    <button class="btn ghost" disabled title="Outdoor logging is in index.html">Log an outdoor day</button>
+   </div>
+   ${proj.length?`<div class="section"><span class="eyebrow">Your projects at ${esc(gym().name)}</span><div class="stack" style="gap:6px">${proj.map(r=>{const c=G(r.kind,r.c);return`<div class="row card" style="padding:10px 12px">${gradeBadge(c)}<div style="flex:1"><b style="font-weight:600">${esc(c.n)} ${kindName(r.kind)}</b> <span class="cap">· ${esc(wallOf(r.wall).name)}</span><div class="cap mono">${plural(r.prior,'try','tries')} · last ${fmtDate(r.last)} · until about ${fmtDate(r.expires)}</div></div></div>`}).join('')}</div>
+    <p class="note">One ${G('boulder',gym().seed()[3].c).lc} in the slab corner expired on ${fmtDate('2026-10-29')} and is no longer suggested.</p></div>`:''}
+  </div>${tabbar()}`;
+}
+
+function winCap(k){const g=grades(k),a=S.win[k],b=a+2,more=g.length-3;return`${g[a].n}–${g[b].n} · ${more} more`}
+function tileStep(el){const t=el.querySelector('.tile');return t?t.getBoundingClientRect().width+8:1}
+function placeTiles(smooth){const el=$('#tiles');if(!el)return;const x=S.win[S.kind]*tileStep(el);if(smooth)el.scrollTo({left:x,behavior:'smooth'});else el.scrollLeft=x;syncWin()}
+function syncWin(){const k=S.kind,i=S.win[k],cap=$('#wincap');if(!cap)return;cap.textContent=winCap(k);
+  const [l,r]=document.querySelectorAll('[data-a=win]');l.disabled=i<=0;r.disabled=i>=grades(k).length-3}
+function tileCount(c,kind){
+  const es=S.entries.filter(e=>{const r=routeOf(e.route);return r.c===c&&r.kind===kind});
+  const st=es.map(styleOf),sends=st.filter(s=>s!=='Attempt').length,fl=st.filter(s=>s==='Flash').length,att=es.filter(e=>!isSend(e)).reduce((s,e)=>s+e.tries,0);
+  const sub=[fl?fl+' flash':'',att?plural(att,'try','tries'):''].filter(Boolean).join(' · ');
+  return`<span class="ct"><span class="n" style="${sends?'':'opacity:.5'}">${sends}<small>${sends===1?'send':'sends'}</small></span>${sub?`<span class="sub">${sub}</span>`:''}</span>`;
+}
+function sessionHTML(){
+  const k=S.kind,nb=S.entries.filter(e=>routeOf(e.route).kind==='boulder').length,nr=S.entries.length-nb;
+  const walls=WALLS.filter(w=>w.kind===k),last=S.entries.find(e=>e.id===S.last);
+  const projs=S.routes.filter(r=>r.kind===k&&isOpenProject(r)&&!S.entries.some(e=>e.route===r.id&&e.id===S.last));
+  const elapsed=S.startedAt?Math.max(1,Math.round((Date.now()-S.startedAt)/60000)):0;
+  return`<div class="shead">
+    <button class="iconbtn" data-a="cancel" aria-label="Discard session">${I.x}</button>
+    <div class="t"><h2>${esc(gym().name)}</h2><div class="cap mono">${S.live?(S.startedAt?`<span class="live"><i></i>Live</span> · since ${hhmm(S.startedAt)} · ${elapsed} min`:'<span class="live"><i></i>Live</span> · starts with your first climb'):`${fmtDate(S.date)} · past session`}</div></div>
+   </div>
+   <div class="screen" style="padding-top:12px">
+    ${S.live?'':`<div class="field" style="margin-bottom:12px"><span class="lbl">Day</span><div class="chips">${[['2026-11-05','Today'],['2026-11-04','Yesterday'],['2026-11-03','Tue 3 Nov']].map(([d,l])=>`<button class="chip ${S.date===d?'on':''}" data-a="date" data-v="${d}" aria-pressed="${S.date===d}">${l}</button>`).join('')}</div></div>`}
+    <div class="seg" role="tablist" aria-label="Type of climbing">
+     <button role="tab" class="${k==='boulder'?'on':''}" aria-selected="${k==='boulder'}" data-a="kind" data-v="boulder">Boulder${nb?' · '+nb:''}</button>
+     <button role="tab" class="${k==='rope'?'on':''}" aria-selected="${k==='rope'}" data-a="kind" data-v="rope">Rope${nr?' · '+nr:''}</button>
+    </div>
+    <div class="stack" style="gap:8px;margin-top:10px">
+     <div class="chips" role="group" aria-label="Wall">${walls.map(w=>`<button class="chip ${S.wall[k]===w.id?'on':''}" data-a="wall" data-v="${w.id}" aria-pressed="${S.wall[k]===w.id}">${esc(w.name)} <small class="mono">${w.height} m · ${w.angle.toLowerCase()}</small></button>`).join('')}</div>
+    </div>
+    ${projs.length?`<div class="section" style="padding-top:14px"><span class="eyebrow">Your projects here</span><div class="projects">${projs.map(r=>{const c=G(r.kind,r.c);const t=r.prior+S.entries.filter(e=>e.route===r.id).reduce((s,e)=>s+e.tries,0);
+      return`<button class="proj" data-a="sendProject" data-id="${r.id}" aria-label="Sent your ${esc(c.n)} project on ${esc(wallOf(r.wall).name)}">${gradeBadge(c)}<span><b style="font-weight:600;font-size:13px">${esc(wallOf(r.wall).name)}</b><small>${plural(t,'try','tries')} · ${r.last?fmtDate(r.last):'tonight'}</small></span></button>`}).join('')}</div></div>`:''}
+    <div class="section" style="padding-top:14px">
+     <div class="row between"><span class="eyebrow">Tap when you top it</span>
+      <div class="winnav"><button class="iconbtn" data-a="win" data-d="-1" aria-label="Easier ${noun()[1]}" ${S.win[k]<=0?'disabled':''}>${I.left}</button><span class="cap mono" id="wincap" aria-live="polite">${winCap(k)}</span><button class="iconbtn" data-a="win" data-d="1" aria-label="Harder ${noun()[1]}" ${S.win[k]>=grades(k).length-3?'disabled':''}>${I.right}</button></div></div>
+     <div class="tiles" id="tiles" aria-label="${byGrade()?'Grades':'Colours'}, three at a time. Swipe for more.">${grades(k).map((c,i)=>`<button class="tile${S.bump===i+k?' bump':''}${c.ramp?' ramp':''}" data-tile="${i}" style="background:${c.hex};color:${ink(c)}" aria-label="Topped a ${esc(c.n)} ${kindName(k)}${c.sub?', '+c.sub:''}">
+       <span><b>${esc(c.n)}</b>${c.sub?`<div class="gr">${c.sub}</div>`:''}</span>${tileCount(i,k)}${S.bump===i+k?'<span class="plus1" aria-hidden="true">+1</span>':''}
+       <span class="more" role="button" tabindex="0" data-more="${i}" aria-label="${esc(c.n)} ${kindName(k)} with details">${I.more}</span></button>`).join('')}</div>
+     <p class="note">Swipe for other ${noun()[1]}. Hold a ${noun()[0]} for details.</p>
+    </div>
+    ${S.entries.length?`<div class="section"><div class="row between"><span class="eyebrow">This session · ${S.entries.length}</span><span class="cap">Swipe left to remove</span></div><div class="entries">${[...S.entries].reverse().map(e=>entryRow(e)).join('')}</div></div>`:''}
+   </div>
+   ${last?stripHTML(last):''}
+   <div class="sfoot">${S.entries.length?`<div class="cap mono" style="flex:1">${summaryLine()}</div><button class="btn" style="flex:none" data-a="finish">Finish</button>`:`<p class="note" style="flex:1;text-align:center">Your first tap starts the session.</p>`}</div>`;
+}
+function entryRow(e){const r=routeOf(e.route),c=G(r.kind,r.c),st=styleOf(e),w=wallOf(r.wall);
+  // Remove sits behind the row. Screen readers and keyboards use Remove climb in details instead.
+  return`<div class="swipe"><button class="swipe-del" data-a="remove" data-id="${e.id}" tabindex="-1" aria-hidden="true">Remove</button><button class="entry" data-a="edit" data-id="${e.id}" aria-label="Edit ${esc(c.n)} ${kindName(r.kind)}, ${st}">${gradeBadge(c)}<span>${r.kind==='rope'?esc(ROPETYPES.find(t=>t[0]===e.ropeType)[1])+' · ':''}<span class="w">${w?esc(w.name):'Wall not set'}${e.myGrade?' · you: '+esc(e.myGrade):''}${(st==='Redpoint'||st==='Attempt')?' · '+(st==='Redpoint'?ordinal(totalTries(e))+' try':e.topped?'topped with rests':plural(e.tries,'try','tries')):''}</span></span><span class="style s-${st}">${st}</span><span class="muted" style="font-size:12px" aria-hidden="true">›</span></button></div>`}
+// Soft or hard, worked out from your grade against the gym's.
+function feelText(e){const r=routeOf(e.route),sc=gradeScale(r.kind),i=sc.indexOf(e.myGrade);
+  if(byGrade()){const d=i-r.c;return d<0?'Soft for the grade.':d>0?'Hard for the grade.':''}
+  const [lo,hi]=r.kind==='boulder'?COLOURS[r.c].b:COLOURS[r.c].r,mid=(lo+hi)/2;return i<mid?`A soft ${G(r.kind,r.c).lc}.`:i>mid?`A hard ${G(r.kind,r.c).lc}.`:''}
+function why(e){const st=styleOf(e),p=priorOf(e),r=routeOf(e.route);
+  if(e.topped&&e.rested)return'You rested on the rope, so it counts as a try, not a send. It stays a project until you climb it clean.';
+  if(st==='Attempt')return`${plural(e.tries,'try','tries')} without topping. It stays a project until you send it or it's reset.`;
+  if(st==='Repeat')return'You have sent this one before, so it logs as a repeat.';
+  if(st==='Flash')return'First try, so it logs as a flash.';
+  return p.tries?`Your ${ordinal(totalTries(e))} try on this ${G(r.kind,r.c).lc}${r.last?`, counting ${plural(r.prior,'try','tries')} from ${fmtDate(r.last)}`:''}, so it logs as a redpoint.`:`Topped after ${plural(e.tries,'try','tries')}, so it logs as a redpoint.`;
+}
+function stripHTML(e){
+  const r=routeOf(e.route),c=G(r.kind,r.c),st=styleOf(e),cn=c.lc;
+  const past=pastProjects(r.c,r.kind).filter(x=>x.id!==r.id),tonight=sessionTries(r.c,r.kind).filter(x=>x.id!==r.id),sent=sessionSends(r.c,r.kind).filter(x=>x!==r.id&&!S.entries.some(y=>y.route===x&&y.id===e.id));
+  const isNew=!r.last&&S.entries.filter(x=>x.route===r.id).length===1;
+  const alts=[];
+  // Offer the likely same climbs: tonight's open tries first, then projects from earlier sessions, then a repeat of a send tonight.
+  tonight.forEach(x=>alts.push(`<button class="chip" data-a="match" data-id="${x.id}">${I.target}The ${cn} you tried tonight</button>`));
+  past.forEach(x=>alts.push(`<button class="chip" data-a="match" data-id="${x.id}">${I.target}Your ${cn} from ${fmtDate(x.last)} <small>${esc(wallOf(x.wall).name)} · ${plural(x.prior,'try','tries')}</small></button>`));
+  if(isSend(e))sent.slice(0,1).forEach(x=>alts.push(`<button class="chip" data-a="match" data-id="${x}">Same ${cn} again</button>`));
+  if(!isNew)alts.push(`<button class="chip" data-a="different">A different ${cn}</button>`);
+  const triesCtl=(st==='Redpoint'&&isNew)||!e.topped;
+  return`<div class="strip" role="status" aria-live="polite">
+    <div class="row between"><div class="row" style="gap:6px;min-width:0"><span class="done${isSend(e)?'':' try'}">${isSend(e)?I.check+'Send added':e.topped?'Topped with rests':'Attempt added'}</span>${gradeBadge(c)}<span class="style s-${st}">${st}</span></div>
+     <div class="row" style="gap:2px"><button class="btn ghost sm" data-a="undo">${I.undo} Undo</button><button class="iconbtn" data-a="closeStrip" aria-label="Done">${I.x}</button></div></div>
+    <p class="note" style="font-size:13px">${why(e)}</p>
+    ${r.kind==='rope'?`<div class="qrow"><span class="lbl" id="q-rope">Rope</span><div class="seg" role="group" aria-labelledby="q-rope">${ROPETYPES.map(([v,l])=>`<button class="${e.ropeType===v?'on':''}" data-a="eRope" data-v="${v}" aria-pressed="${e.ropeType===v}">${l}</button>`).join('')}</div></div>`:''}
+    <div class="qrow"><span class="lbl" id="q-angle">Angle</span><div class="seg" role="group" aria-labelledby="q-angle">${ANGLES.map(a=>`<button class="${e.angle===a?'on':''}" data-a="eAngle" data-v="${a}" aria-pressed="${e.angle===a}">${a}</button>`).join('')}</div></div>
+    <div class="chips" role="group" aria-label="${isNew?'Is it one you tried before?':'Change the climb'}">
+     ${alts.join('')}
+     ${e.topped&&st==='Flash'?`<button class="chip" data-a="notFirst">Not first try</button>`:''}
+     ${e.topped?`<button class="chip" data-a="topped" data-v="0">Didn't top</button>`:`<button class="chip" data-a="topped" data-v="1">Topped it</button>`}
+     ${r.kind==='rope'&&e.topped?`<button class="chip" data-a="rested" data-v="${e.rested?0:1}">${e.rested?'Climbed it clean':'Rested on the rope'}</button>`:''}
+     <button class="chip" data-a="edit" data-id="${e.id}">Details</button>
+    </div>
+    ${triesCtl?`<div class="row between"><span class="lbl">${e.topped?'Tries tonight':'Tries'}</span><div class="stepper"><button data-a="tries" data-d="-1" aria-label="Fewer tries" ${e.tries<=(isSend(e)&&!priorOf(e).tries?2:1)?'disabled':''}>−</button><span>${e.tries}</span><button data-a="tries" data-d="1" aria-label="More tries">+</button></div></div>`:''}
+   </div>`;
+}
+function stats(){
+  const st=S.entries.map(styleOf),sends=st.filter(s=>s!=='Attempt').length;
+  const sent=S.entries.filter(isSend).map(e=>routeOf(e.route)),top=k=>sent.filter(r=>r.kind===k).reduce((b,r)=>Math.max(b,r.c),-1);
+  const best={boulder:top('boulder'),rope:top('rope')};
+  const metres=S.entries.filter(e=>routeOf(e.route).kind==='rope').reduce((s,e)=>s+(wallOf(routeOf(e.route).wall)?.height||0)*(e.topped?1:e.tries),0);
+  return{n:S.entries.length,sends,fl:st.filter(s=>s==='Flash').length,best,any:best.boulder>=0||best.rope>=0,metres,b:S.entries.filter(e=>routeOf(e.route).kind==='boulder').length,r:S.entries.filter(e=>routeOf(e.route).kind==='rope').length};
+}
+// Best send per kind. In a colour gym a mixed session says which kind, since both use the same colours.
+function bestParts(){const s=stats(),mixed=s.b&&s.r;return['boulder','rope'].filter(k=>s.best[k]>=0).map(k=>G(k,s.best[k]).n+(mixed&&!byGrade()?' '+kindName(k):''))}
+function bestText(){const p=bestParts();return p.length?'best '+p.join(' and '):''}
+function summaryLine(){const s=stats();return`${plural(s.n,'climb','climbs')} · ${plural(s.sends,'send','sends')}${s.any?' · '+bestText():''}`}
+function autoTitle(){const s=stats();const parts=[];if(s.b)parts.push(plural(s.b,'boulder','boulders'));if(s.r)parts.push(plural(s.r,'route','routes'));return parts.join(' and ')+(s.any?' · '+bestText():'')}
+
+/* ---------- sheets ---------- */
+function sheetHTML(){return S.sheet.type==='edit'?editHTML():finishHTML()}
+function editHTML(){
+  const e=S.entries.find(x=>x.id===S.sheet.id);if(!e)return'';
+  const r=routeOf(e.route),c=G(r.kind,r.c),st=styleOf(e),walls=WALLS.filter(w=>w.kind===r.kind),w=wallOf(r.wall);
+  const fromWall=w&&e.angle===w.angle;
+  return`<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(c.n)} ${kindName(r.kind)}">
+   <div class="sheet-head"><button class="iconbtn" data-a="closeSheet" aria-label="Close" data-focus>${I.x}</button><h2>${esc(c.n)} ${kindName(r.kind)}</h2><span style="width:36px"></span></div>
+   <div class="sheet-body">
+    <div class="auto">${gradeBadge(c)}<span><b>${c.ramp?esc(c.n):c.sub}</b> at ${esc(gym().name)}${w?` · ${w.height} m`:''}</span></div>
+    <div class="field"><span class="lbl">Result</span><div class="chips">
+      ${(r.kind==='rope'?[['send','Topped clean'],['rests','Topped with rests'],['no',"Didn't top"]]:[['send','Topped'],['no',"Didn't top"]]).map(([v,l])=>{const on=v===(isSend(e)?'send':e.topped?'rests':'no');
+        return`<button class="chip ${on?'on':''}" data-a="result" data-v="${v}" aria-pressed="${on}">${l}</button>`}).join('')}</div>
+      <div class="row between"><span class="note">${why(e)}</span><span class="style s-${st}">${st}</span></div></div>
+    ${e.topped?`<div class="field"><span class="lbl">My grade</span><div class="chips">${gradeScale(r.kind).map(g=>`<button class="chip mono ${shownGrade(e)===g?'on':''}" data-a="myGrade" data-v="${esc(g)}" aria-pressed="${shownGrade(e)===g}">${esc(g)}</button>`).join('')}</div><p class="note">${byGrade()?`Leave it at ${esc(c.n)} if it felt like the grade.`:`Leave it empty to count it as the middle of ${esc(c.n)}, ${c.sub}.`}${e.myGrade?' '+feelText(e):''}</p></div>`:''}
+    <div class="row between"><span class="lbl">Tries this time</span><div class="stepper"><button data-a="tries" data-d="-1" aria-label="Fewer tries" ${e.tries<=1?'disabled':''}>−</button><span>${e.tries}</span><button data-a="tries" data-d="1" aria-label="More tries">+</button></div></div>
+    ${r.kind==='rope'?`<div class="field"><span class="lbl">How you climbed</span><div class="chips">${ROPETYPES.map(([v,l])=>`<button class="chip ${e.ropeType===v?'on':''}" data-a="eRope" data-v="${v}" aria-pressed="${e.ropeType===v}">${l}</button>`).join('')}</div></div>`:''}
+    <div class="field"><span class="lbl">Wall</span><div class="chips">${walls.map(x=>`<button class="chip ${r.wall===x.id?'on':''}" data-a="eWall" data-v="${x.id}" aria-pressed="${r.wall===x.id}">${esc(x.name)}</button>`).join('')}</div></div>
+    <div class="field"><span class="lbl">Angle</span><div class="chips">${ANGLES.map(a=>`<button class="chip ${e.angle===a?'on':''}" data-a="eAngle" data-v="${a}" aria-pressed="${e.angle===a}">${a}</button>`).join('')}</div>${fromWall?`<p class="note">From the wall. Change it if this climb is steeper or flatter than the wall.</p>`:''}</div>
+    <div class="field"><span class="lbl">Main holds</span><div class="chips">${HOLDS.map(h=>`<button class="chip ${e.holds.includes(h)?'on':''}" data-a="eHold" data-v="${h}" aria-pressed="${e.holds.includes(h)}">${h}</button>`).join('')}</div></div>
+    <div class="field"><span class="lbl">Movement</span><div class="chips">${MOVES.map(h=>`<button class="chip ${e.moves.includes(h)?'on':''}" data-a="eMove" data-v="${h}" aria-pressed="${e.moves.includes(h)}">${h}</button>`).join('')}</div><p class="note">Holds and movement feed your style profile, so you can see what you send and what you avoid.</p></div>
+    <div class="field"><label class="lbl" for="e-note">Beta</label><textarea class="input" id="e-note" rows="2" placeholder="Heel hook on the volume, then the left crimp">${esc(e.note)}</textarea><p class="note">Only you see beta.</p></div>
+    <button class="btn danger" data-a="remove" data-id="${e.id}">Remove climb</button>
+   </div>
+   <div class="sheet-foot"><button class="btn" data-a="closeSheet">Done</button></div></div>`;
+}
+function finishHTML(){
+  const s=stats(),end=S.live?new Date():null;
+  const kinds=s.b&&s.r?['boulder','rope']:[s.b?'boulder':'rope'];
+  const byColour=kinds.flatMap(k=>grades(k).map((c,i)=>{const es=S.entries.filter(e=>routeOf(e.route).c===i&&routeOf(e.route).kind===k),st=es.map(styleOf);
+    return{c,label:c.n+(kinds.length>1?(k==='boulder'?' B':' R'):''),fl:st.filter(x=>x==='Flash').length,rp:st.filter(x=>x==='Redpoint').length,re:st.filter(x=>x==='Repeat').length,at:st.filter(x=>x==='Attempt').length,n:es.length}})).filter(x=>x.n);
+  const max=Math.max(...byColour.map(x=>x.n));
+  const projSends=S.entries.filter(e=>isSend(e)&&routeOf(e.route).last&&styleOf(e)==='Redpoint');
+  return`<div class="sheet" role="dialog" aria-modal="true" aria-label="Finish session">
+   <div class="sheet-head"><button class="iconbtn" data-a="closeSheet" aria-label="Back to session" data-focus>${I.x}</button><h2>Finish session</h2><span style="width:36px"></span></div>
+   <div class="sheet-body">
+    <div class="stats">
+     <div class="stat"><div class="v">${s.n}</div><div class="k">Climbs</div></div>
+     <div class="stat"><div class="v">${s.sends}</div><div class="k">Sends</div></div>
+     <div class="stat"><div class="v">${s.fl}</div><div class="k">Flashes</div></div>
+     <div class="stat"><div class="v">${s.r?s.metres+' m':s.any?G('boulder',s.best.boulder).n:'–'}</div><div class="k">${s.r?'On rope':'Best'}</div></div>
+    </div>
+    ${projSends.map(e=>{const r=routeOf(e.route);return`<div class="auto" style="border-left:3px solid var(--rp);border-radius:0 8px 8px 0">${gradeBadge(G(r.kind,r.c))}<span><b>Project sent</b> · ${esc(wallOf(r.wall).name)} · ${ordinal(totalTries(e))} try, ${plural(Math.round((new Date(S.date)-new Date(r.last))/864e5),'day','days')} after your last go</span></div>`}).join('')}
+    <div class="stack" style="gap:6px">${byColour.map(x=>`<div class="bar-row"><span>${esc(x.label)}</span><div class="bar-track" role="img" aria-label="${esc(x.label)}: ${x.fl} flash, ${x.rp} redpoint, ${x.re} repeat, ${x.at} attempt">
+      ${[['fl','--fl'],['rp','--rp'],['re','--muted']].map(([k,v])=>x[k]?`<i style="width:${x[k]/max*100}%;background:var(${v})"></i>`:'').join('')}${x.at?`<i style="width:${x.at/max*100}%;box-shadow:inset 0 0 0 1px var(--att)"></i>`:''}</div><span class="num">${x.n}</span></div>`).join('')}
+     <div class="legend">${kinds.length>1?'<span>B boulder · R rope</span>':''}<span><i style="background:var(--fl)"></i>Flash</span><span><i style="background:var(--rp)"></i>Redpoint</span><span><i style="background:var(--muted)"></i>Repeat</span><span><i style="box-shadow:inset 0 0 0 1px var(--att)"></i>Attempt</span></div></div>
+    <div class="auto"><span class="eyebrow" style="flex:none">Filled in</span><b>${esc(gym().name)} · ${S.live?`${hhmm(S.startedAt)}–${hhmm(end)}`:fmtDate(S.date)} · Gym shoes</b></div>
+    <div class="field"><label class="lbl" for="f-title">Title</label><input class="input" id="f-title" value="${esc(S.title)}" placeholder="${esc(autoTitle())}"><p class="note">Leave it empty to use “${esc(autoTitle())}”.</p></div>
+    <div class="field"><span class="lbl">Climbed with</span><div class="chips">${PEOPLE.map(p=>`<button class="chip ${S.partners.includes(p.id)?'on':''}" data-a="partner" data-v="${p.id}" aria-pressed="${S.partners.includes(p.id)}">${esc(p.n)}${p.here?` <small>at ${esc(gym().name)} today</small>`:''}</button>`).join('')}</div><p class="note">Ingrid logged a session here tonight, so she is suggested. Tagging sends her a request.</p></div>
+    <div class="field"><span class="lbl">Who can see it</span><div class="seg">${['Public','Friends','Only you'].map(v=>`<button class="${S.vis===v?'on':''}" data-a="vis" data-v="${v}" aria-pressed="${S.vis===v}">${v}</button>`).join('')}</div></div>
+   </div>
+   <div class="sheet-foot"><button class="btn" data-a="save">Save session</button></div></div>`;
+}
+function savedHTML(){const s=S.saved;
+  return`<div class="screen"><div class="top"><h1>Log</h1></div>
+   <div class="card stack"><div><div class="cap">${esc(s.when)} · ${esc(gym().name)}</div><h2 style="margin-top:4px">${esc(s.title)}</h2></div>
+    <div class="stats"><div class="stat"><div class="v">${s.n}</div><div class="k">Climbs</div></div><div class="stat"><div class="v">${s.sends}</div><div class="k">Sends</div></div><div class="stat"><div class="v">${s.fl}</div><div class="k">Flashes</div></div><div class="stat"><div class="v">${s.best}</div><div class="k">Best</div></div></div>
+    <p class="note">Saved to your log. It syncs when you're online.</p></div>
+   <div class="section"><button class="btn ghost" data-a="again">Start again</button></div></div>${tabbar()}`;
+}
+
+/* ---------- events ---------- */
+let toastT;
+function toast(t,undo){S.toast=t;S.toastUndo=undo||null;clearTimeout(toastT);toastT=setTimeout(()=>{S.toast=null;S.toastUndo=null;render()},undo?5000:2500)}
+// Every way of removing a climb can be undone from the toast for a few seconds.
+function removeEntry(e){const snap={entries:[...S.entries],routes:[...S.routes]},r=routeOf(e.route);
+  S.entries=S.entries.filter(x=>x!==e);dropIfUnused(e.route);S.last=null;S.sheet=null;
+  toast(`${G(r.kind,r.c).n} ${kindName(r.kind)} removed`,()=>{S.entries=snap.entries;S.routes=snap.routes})}
+const cur=()=>S.entries.find(e=>e.id===(S.sheet?.type==='edit'?S.sheet.id:S.last));
+const A={
+  theme:v=>{theme.v=v},
+  gym:v=>{gymId=v;reset()},
+  elite:(v,el)=>{showElite=!showElite;el.setAttribute('aria-pressed',showElite);el.textContent='Elite grades: '+(showElite?'on':'off');
+    for(const k of['boulder','rope'])S.win[k]=Math.min(S.win[k],grades(k).length-3)},
+  start:(v,el)=>{S.view='session';S.live=el.dataset.live==='1'},
+  cancel:()=>{if(!S.entries.length||confirm(`Discard this session and its ${plural(S.entries.length,'climb','climbs')}?`))reset()},
+  date:v=>{S.date=v},
+  kind:v=>{S.kind=v;S.last=null},
+  wall:v=>{S.wall[S.kind]=v},
+  sendProject:(v,el)=>{addEntry(routeOf(el.dataset.id))},
+  closeStrip:()=>{S.last=null},
+  undo:()=>{removeEntry(cur())},
+  toastUndo:()=>{S.toastUndo?.();clearTimeout(toastT);S.toast=null;S.toastUndo=null},
+  match:(v,el)=>{setRoute(cur(),el.dataset.id);cur().tries=1},
+  different:()=>{const e=cur(),r=routeOf(e.route);setRoute(e,newRoute(r.c,r.kind).id);e.tries=1},
+  notFirst:()=>{cur().tries=2},
+  topped:v=>{const e=cur();e.topped=v==='1';if(!e.topped)e.rested=false;if(e.topped&&e.tries<1)e.tries=1},
+  rested:v=>{cur().rested=v==='1'},
+  result:v=>{const e=cur();e.topped=v!=='no';e.rested=v==='rests'},
+  // Tap the picked grade again to clear it.
+  myGrade:v=>{const e=cur();e.myGrade=shownGrade(e)===v?null:v;if(byGrade()&&e.myGrade===G(routeOf(e.route).kind,routeOf(e.route).c).n)e.myGrade=null},
+  // In the strip a topped new climb with more than one try is a redpoint, so it keeps at least 2. "Not first try" got it there.
+  tries:(v,el)=>{const e=cur(),min=!S.sheet&&isSend(e)&&!priorOf(e).tries?2:1;e.tries=Math.max(min,e.tries+Number(el.dataset.d))},
+  edit:(v,el)=>{S.sheet={type:'edit',id:el.dataset.id}},
+  closeSheet:()=>{S.sheet=null},
+  // The latest rope type you picked becomes the default for the next rope climb, so you only change it when you switch.
+  eRope:v=>{cur().ropeType=v;S.ropeType=v;lastRope.set(v)},
+  eWall:v=>{const e=cur(),r=routeOf(e.route);r.wall=v;r.angle=null;e.angle=wallOf(v).angle},
+  // The angle belongs to the climb, so a repeat or a later try on it keeps the angle you set.
+  eAngle:v=>{const e=cur();e.angle=v;routeOf(e.route).angle=v},
+  eHold:v=>{const e=cur();e.holds=e.holds.includes(v)?e.holds.filter(x=>x!==v):[...e.holds,v]},
+  eMove:v=>{const e=cur();e.moves=e.moves.includes(v)?e.moves.filter(x=>x!==v):[...e.moves,v]},
+  remove:(v,el)=>{removeEntry(S.entries.find(x=>x.id===el.dataset.id))},
+  finish:()=>{S.sheet={type:'finish'};S.last=null},
+  partner:v=>{S.partners=S.partners.includes(v)?S.partners.filter(x=>x!==v):[...S.partners,v]},
+  vis:v=>{S.vis=v},
+  save:()=>{const s=stats();S.saved={title:S.title||autoTitle(),when:S.live?'Today':fmtDate(S.date),n:s.n,sends:s.sends,fl:s.fl,best:s.any?bestParts().map(x=>x.split(' ')[0]).join(' / '):'–'};S.view='saved';S.sheet=null;toast('Session saved')},
+  again:()=>{reset()}
+};
+document.addEventListener('click',ev=>{
+  if(longFired){longFired=false;return}
+  if(swiped){swiped=false;return}
+  // A tap on an open row closes it instead of opening details.
+  if(openRow&&ev.target.closest('.entry')===openRow){shut(openRow);return}
+  const more=ev.target.closest('[data-more]');
+  if(more){const e=logAndGet(Number(more.dataset.more));S.sheet={type:'edit',id:e.id};render();return}
+  const t=ev.target.closest('[data-tile]');
+  if(t){logTap(Number(t.dataset.tile));render();return}
+  const b=ev.target.closest('[data-a]');if(!b||b.disabled)return;
+  if(b.dataset.a==='win'){const k=S.kind;S.win[k]=Math.max(0,Math.min(grades(k).length-3,S.win[k]+Number(b.dataset.d)));placeTiles(true);return}
+  A[b.dataset.a]?.(b.dataset.v,b);render();
+});
+document.addEventListener('keydown',ev=>{const m=ev.target.closest?.('[data-more]');if(m&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();ev.stopPropagation();m.click()}
+  if(ev.key==='Escape'&&S.sheet){S.sheet=null;render()}});
+document.addEventListener('input',ev=>{if(ev.target.id==='f-title')S.title=ev.target.value;if(ev.target.id==='e-note'){const e=cur();if(e)e.note=ev.target.value}});
+// Swipe to remove on logged climbs.
+let drag=null,swiped=false,openRow=null;
+const OPEN=-96;
+function shut(el){el.style.transform='';if(openRow===el)openRow=null}
+document.addEventListener('pointerdown',ev=>{const el=ev.target.closest('.swipe .entry');swiped=false;
+  if(openRow&&!ev.target.closest('.swipe'))shut(openRow);
+  if(el)drag={el,x:ev.clientX,y:ev.clientY,base:el===openRow?OPEN:0,on:false,tx:0}});
+document.addEventListener('pointermove',ev=>{if(!drag)return;const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;
+  if(!drag.on){if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){drag.on=true;drag.el.classList.add('dragging');drag.el.setPointerCapture?.(ev.pointerId)}
+    else if(Math.abs(dy)>8){drag=null;return}else return}
+  drag.tx=Math.min(0,drag.base+dx);drag.el.style.transform=`translateX(${drag.tx}px)`});
+document.addEventListener('pointerup',()=>{if(!drag)return;const d=drag;drag=null;if(!d.on)return;
+  swiped=true;d.el.classList.remove('dragging');
+  if(d.tx<-d.el.offsetWidth*.5){const id=d.el.closest('.swipe').querySelector('.swipe-del').dataset.id;openRow=null;removeEntry(S.entries.find(x=>x.id===id));render()}
+  else if(d.tx<OPEN/2){if(openRow&&openRow!==d.el)shut(openRow);d.el.style.transform=`translateX(${OPEN}px)`;openRow=d.el}
+  else shut(d.el)});
+function logAndGet(c){logTap(c);return S.entries[S.entries.length-1]}
+// Press and hold a tile: log the climb and open its details.
+let holdT,longFired=false;
+document.addEventListener('pointerdown',ev=>{const t=ev.target.closest('[data-tile]');if(!t||ev.target.closest('[data-more]'))return;
+  holdT=setTimeout(()=>{longFired=true;const e=logAndGet(Number(t.dataset.tile));S.sheet={type:'edit',id:e.id};render()},450)});
+['pointerup','pointercancel','pointerleave'].forEach(n=>document.addEventListener(n,()=>clearTimeout(holdT),true));
+document.addEventListener('contextmenu',ev=>{if(ev.target.closest('[data-tile]'))ev.preventDefault()});
+setInterval(()=>{if(S.view==='session'&&S.live&&S.startedAt&&!S.sheet)render()},30000);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+render();
+</script>
+</body>
+</html>
