@@ -231,6 +231,11 @@ typedef RouteClimb = ({
 /// One live ascent in a route's log, with its id and session.
 typedef RouteLogEntry = ({String id, String sessionId, LoggedAscent ascent});
 
+/// Ascent types a climb in an indoor session can have. An auto-belay climb
+/// logs as top rope (docs/schema.md, ascents); outdoors, the session
+/// logger offers `outdoorAscentTypes`.
+const indoorAscentTypes = {'lead', 'toprope', 'boulder'};
+
 /// Climbs logged in a session.
 class AscentRepository extends Repository<$AscentsTable, Ascent> {
   new(super.db, {super.clock});
@@ -270,6 +275,10 @@ class AscentRepository extends Repository<$AscentsTable, Ascent> {
               ))
               .getSingleOrNull();
       if (session == null) throw NotYourRow('sessions', sessionId);
+      if (session.setting == 'indoor' &&
+          !indoorAscentTypes.contains(draft.ascentType.value)) {
+        throw ArgumentError.value(draft.ascentType.value, 'ascentType');
+      }
       final route =
           await (db.select(db.routes)..where(
                 (r) =>
