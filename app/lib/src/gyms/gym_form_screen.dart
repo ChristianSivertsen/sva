@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/gyms/colour_scale_editor.dart';
 import 'package:sva/src/places/form_parts.dart';
 import 'package:sva/src/places/location_picker.dart';
 import 'package:sva_data/sva_data.dart';
@@ -16,7 +17,8 @@ final List<String> _angles = attributeSeed
     .firstWhere((d) => d.key == 'angle')
     .valueKeys;
 
-/// The form for a gym and its walls: new without [gymId], else that gym.
+/// The form for a gym, its walls and its colours: new without [gymId],
+/// else that gym.
 /// A new gym starts with a rope wall and a boulder area, so a typical gym
 /// needs only a name and a wall or two more.
 class GymFormScreen extends ConsumerStatefulWidget {
@@ -68,9 +70,11 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
   final _lon = TextEditingController();
   var _grading = 'colour';
   final _walls = <_Wall>[];
+  final _colours = <ColourEntry>[];
 
   /// Whether the gym's own fields can be changed: always for a new gym,
-  /// and for the user's private gyms. Walls are the user's own either way.
+  /// and for the user's private gyms. Walls and colours are the user's own
+  /// either way.
   var _ownGym = true;
   var _loading = false;
   var _saving = false;
@@ -103,6 +107,7 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
           angle: 'angle.overhang',
         ),
       ]);
+      _colours.addAll(defaultColours(l10n));
     }
   }
 
@@ -124,7 +129,7 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
       context.pop();
       return;
     }
-    final (:gym, :grading, :walls) = setup;
+    final (:gym, :grading, :walls, :colours) = setup;
     setState(() {
       _name.text = gym.name;
       _country.text = gym.countryCode;
@@ -142,6 +147,7 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
             angle: w.angle,
           ),
       ]);
+      _colours.addAll([for (final c in colours) ColourEntry.fromRow(c)]);
       _loading = false;
     });
   }
@@ -153,6 +159,9 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
     }
     for (final wall in _walls) {
       wall.dispose();
+    }
+    for (final colour in _colours) {
+      colour.dispose();
     }
     super.dispose();
   }
@@ -187,6 +196,17 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
   });
 
   Future<void> _save() async {
+    // Colours are kept, out of sight, while another grading is picked. One
+    // without a name would fail to save, so show them again with the
+    // message where the user can see it.
+    if (_grading != 'colour' &&
+        _colours.any((c) => c.name.text.trim().isEmpty)) {
+      setState(() => _grading = 'colour');
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _form.currentState?.validate(),
+      );
+      return;
+    }
     if (!_form.currentState!.validate()) return;
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -208,16 +228,36 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
           angle: w.angle,
         ),
     ];
+    // Colours are kept while another grading is picked, so switching back
+    // does not lose them.
+    final colours = [for (final c in _colours) c.draft];
     final editor = ref.read(gymEditorProvider);
     final userId = ref.read(currentUserIdProvider);
     try {
       if (widget.gymId case final id? when !_ownGym) {
-        // A shared gym: only the user's walls are theirs to change.
-        await editor.saveWalls(id, walls: walls, userId: userId);
+        // A shared gym: only the user's walls and colours are theirs to
+        // change.
+        await editor.saveOwn(
+          id,
+          walls: walls,
+          colours: colours,
+          userId: userId,
+        );
       } else if (widget.gymId case final id?) {
-        await editor.updateGym(id, gym, walls: walls, userId: userId);
+        await editor.updateGym(
+          id,
+          gym,
+          walls: walls,
+          colours: colours,
+          userId: userId,
+        );
       } else {
-        await editor.addGym(gym, walls: walls, userId: userId);
+        await editor.addGym(
+          gym,
+          walls: walls,
+          colours: colours,
+          userId: userId,
+        );
       }
       router.pop();
     } on Object {
@@ -271,6 +311,11 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
                       if (v.isNotEmpty) setState(() => _grading = v.single);
                     },
                   ),
+                  if (_grading == 'colour')
+                    ColourScaleEditor(
+                      colours: _colours,
+                      onChanged: () => setState(() {}),
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(
                       top: SvaSpace.xl,

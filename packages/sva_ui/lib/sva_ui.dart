@@ -13,4 +13,5 @@ export 'src/theme/sva_theme.dart';
 export 'src/theme/sva_tokens.dart';
 export 'src/theme/sva_typography.dart';
 export 'src/widgets/badges.dart';
+export 'src/widgets/gym_colour.dart';
 export 'src/widgets/session_card.dart';

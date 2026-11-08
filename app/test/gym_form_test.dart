@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,7 @@ import 'package:sva/src/gyms/gym_form_screen.dart';
 import 'package:sva/src/router.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva/src/settings/settings_screen.dart';
+import 'package:sva_core/sva_core.dart' show Grade, colourRange, gradeSystems;
 import 'package:sva_data/sva_data.dart';
 
 /// Records what the gym form saves. Storage and its checks are tested in
@@ -20,6 +22,7 @@ class _FakeGyms extends GymEditor {
   final bool fail;
   NewGym? gym;
   List<WallDraft>? walls;
+  List<ColourDraft>? colours;
   String? called;
 
   @override
@@ -27,10 +30,12 @@ class _FakeGyms extends GymEditor {
     NewGym gym, {
     required List<WallDraft> walls,
     required String userId,
+    List<ColourDraft> colours = const [],
   }) async {
     if (fail) throw StateError('disk full');
     this.gym = gym;
     this.walls = walls;
+    this.colours = colours;
     called = 'addGym';
     return 'g1';
   }
@@ -41,20 +46,24 @@ class _FakeGyms extends GymEditor {
     NewGym gym, {
     required List<WallDraft> walls,
     required String userId,
+    List<ColourDraft> colours = const [],
   }) async {
     this.gym = gym;
     this.walls = walls;
+    this.colours = colours;
     called = 'updateGym';
   }
 
   @override
-  Future<void> saveWalls(
+  Future<void> saveOwn(
     String gymId, {
     required List<WallDraft> walls,
     required String userId,
+    List<ColourDraft> colours = const [],
   }) async {
     this.walls = walls;
-    called = 'saveWalls';
+    this.colours = colours;
+    called = 'saveOwn';
   }
 
   @override
@@ -108,6 +117,7 @@ void main() {
         gymEditorProvider.overrideWithValue(gyms),
         gymsProvider.overrideWith((ref) => Stream.value(const [])),
         settingsProvider.overrideWith((ref) => Stream.value(const Settings())),
+        gradeSystemsProvider.overrideWith((ref) async => gradeSystems),
       ],
     );
     addTearDown(container.dispose);
@@ -178,6 +188,7 @@ void main() {
           _wall('w1', 'Lead wall', 'rope', 15),
           _wall('w2', 'Cave', 'boulder', 4),
         ],
+        colours: const <GymColourGrade>[],
       ),
     );
     expect(find.text('Edit gym'), findsOneWidget);
@@ -238,8 +249,12 @@ void main() {
     // With one wall left, it has no remove button.
     await tester.tap(find.byTooltip('Remove Boulder area'));
     await tester.pumpAndSettle();
+    final lastWall = find.ancestor(
+      of: field('0,5'),
+      matching: find.byType(Card),
+    );
     expect(
-      find.descendant(of: find.byType(Card), matching: find.byType(IconButton)),
+      find.descendant(of: lastWall, matching: find.byType(IconButton)),
       findsNothing,
     );
   });
@@ -252,7 +267,8 @@ void main() {
       existing: (
         gym: _gym(createdBy: 'someone else', visibility: 'public'),
         grading: 'colour',
-        walls: const [],
+        walls: const <GymWall>[],
+        colours: const <GymColourGrade>[],
       ),
     );
     expect(
@@ -267,7 +283,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save gym'));
     await tester.pumpAndSettle();
-    expect(gyms.called, 'saveWalls');
+    expect(gyms.called, 'saveOwn');
     expect(gyms.walls!.single.name, 'Wall 1');
   });
 
@@ -283,5 +299,138 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(GymFormScreen), findsOneWidget);
+  });
+
+  testWidgets('M3-2: the colour editor maps colours to grade ranges', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.tap(find.text('Add a gym'));
+    await tester.pumpAndSettle();
+    await tester.enterText(field('Name'), 'Klatreverket');
+    expect(find.text('Colours, easiest first'), findsOneWidget);
+    Finder card(String colour) =>
+        find.ancestor(of: field(colour), matching: find.byType(Card));
+    Finder inCard(String colour, Finder finder) =>
+        find.descendant(of: card(colour), matching: finder);
+
+    // Blue spans Font 6A to 6B for boulders. Picking the start first
+    // makes a one-grade range.
+    final boulderFrom = inCard(
+      'Blue',
+      find.byType(DropdownButton<Grade?>),
+    ).first;
+    await tester.ensureVisible(boulderFrom);
+    await tester.tap(boulderFrom);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('6A').last);
+    await tester.pumpAndSettle();
+    final boulderTo = inCard('Blue', find.byType(DropdownButton<Grade>)).first;
+    await tester.tap(boulderTo);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('6B').last);
+    await tester.pumpAndSettle();
+
+    // Add a colour, name it, and move it above blue.
+    await tester.ensureVisible(find.text('Add a colour'));
+    await tester.tap(find.text('Add a colour'));
+    await tester.pumpAndSettle();
+    await tester.enterText(field('Colour 3'), 'Yellow');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Move Yellow up'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Remove Green'));
+    await tester.pumpAndSettle();
+
+    // The swatch opens the colour picker; closing it keeps the colour.
+    final swatch = inCard('Blue', find.byType(InkWell)).first;
+    await tester.ensureVisible(swatch);
+    await tester.tap(swatch);
+    await tester.pumpAndSettle();
+    expect(find.byType(ColorPicker), findsOneWidget);
+    Navigator.of(tester.element(find.byType(ColorPicker))).pop();
+    await tester.pumpAndSettle();
+
+    // Another grading hides the colours but keeps them.
+    await tester.tap(find.widgetWithText(FilterChip, 'Standard grades'));
+    await tester.pumpAndSettle();
+    expect(find.text('Colours, easiest first'), findsNothing);
+    await tester.tap(find.text('Save gym'));
+    await tester.pumpAndSettle();
+
+    final font = gradeSystems.firstWhere((s) => s.key == 'font');
+    expect(gyms.gym!.grading, 'standard');
+    expect(
+      gyms.colours!.map((c) => (c.name, c.colourHex, c.boulder, c.route)),
+      [
+        ('Yellow', '#808080', null, null),
+        (
+          'Blue',
+          '#2F6FD1',
+          colourRange(font.parse('6A')!, font.parse('6B')!),
+          null,
+        ),
+      ],
+    );
+  });
+
+  testWidgets("M3-2: a gym's saved colours load into the editor, and a "
+      'hidden colour without a name is shown again', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final font = gradeSystems.firstWhere((s) => s.key == 'font');
+    final range = colourRange(font.parse('6A')!, font.parse('6B')!);
+    await open(
+      tester,
+      existing: (
+        gym: _gym(),
+        grading: 'colour',
+        walls: [_wall('w1', 'Cave', 'boulder', 4)],
+        colours: [
+          GymColourGrade(
+            id: 'c1',
+            createdAt: DateTime.utc(2026),
+            updatedAt: DateTime.utc(2026),
+            ownerId: localUserId,
+            gymId: 'g1',
+            sort: 0,
+            name: 'Blue',
+            colourHex: '#2F6FD1',
+            boulderMinScore: range.min,
+            boulderMaxScore: range.max,
+          ),
+        ],
+      ),
+    );
+    expect(field('Blue'), findsOneWidget);
+    // The range pickers say which colour and grade they set.
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Easiest grade for Blue \(Boulders\)')),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Hardest grade for Blue \(Boulders\)')),
+      findsOneWidget,
+    );
+
+    // Clear the name, then hide the colours behind another grading.
+    await tester.enterText(field('Blue'), '');
+    await tester.tap(find.widgetWithText(FilterChip, 'Ungraded'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save gym'));
+    await tester.pumpAndSettle();
+    expect(find.text('Colours, easiest first'), findsOneWidget);
+    expect(find.text('Give the colour a name.'), findsOneWidget);
+    expect(gyms.called, isNull, reason: 'nothing saved');
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Colour name'),
+      'Blå',
+    );
+    await tester.tap(find.text('Save gym'));
+    await tester.pumpAndSettle();
+    expect(gyms.colours!.single.id, 'c1');
+    expect(gyms.colours!.single.name, 'Blå');
+    expect(gyms.colours!.single.boulder, range);
+    semantics.dispose();
   });
 }
