@@ -8,6 +8,7 @@ export 'src/database/sva_database.dart';
 export 'src/grades/grade_repository.dart';
 export 'src/ids.dart';
 export 'src/repositories/gym_editor.dart';
+export 'src/repositories/gym_routes.dart';
 export 'src/repositories/personal_repositories.dart';
 export 'src/repositories/place_repositories.dart';
 export 'src/repositories/repository.dart';
