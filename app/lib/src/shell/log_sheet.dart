@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
 import 'package:sva/src/logging/climb_editor.dart';
+import 'package:sva/src/logging/indoor_log.dart';
 import 'package:sva/src/places/form_parts.dart';
 import 'package:sva/src/places/grade_badge.dart';
 import 'package:sva/src/places/labels.dart';
@@ -416,10 +417,7 @@ class _LogSheetState extends ConsumerState<LogSheet> {
                           formGap,
                         ],
                         if (!outdoor)
-                          Text(
-                            l10n.logIndoorSoon,
-                            style: text.body.copyWith(color: colors.textMuted),
-                          )
+                          IndoorLog(onSaved: () => closeLogSheet(context))
                         else ...[
                           for (final (i, climb) in _climbs.indexed)
                             _PendingRow(

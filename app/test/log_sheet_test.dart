@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/app.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/logging/indoor_log.dart';
 import 'package:sva/src/shell/app_shell.dart';
 import 'package:sva_core/sva_core.dart';
 import 'package:sva_data/sva_data.dart';
@@ -150,7 +151,7 @@ void main() {
     await start(tester, lastSetting: 'indoor');
     await tester.tap(find.byKey(logButtonKey));
     await tester.pumpAndSettle();
-    expect(find.textContaining('once gyms arrive'), findsOneWidget);
+    expect(find.byType(IndoorLog), findsOneWidget);
     expect(find.text('Save session'), findsNothing);
 
     await tester.tap(find.text('Outdoor'));

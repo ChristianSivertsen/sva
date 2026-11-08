@@ -1058,11 +1058,107 @@ abstract class AppLocalizations {
   /// **'Walls and boards'**
   String get logIndoorHint;
 
-  /// No description provided for @logIndoorSoon.
+  /// No description provided for @logIndoorNoGym.
   ///
   /// In en, this message translates to:
-  /// **'Gym climbs can be logged once gyms arrive. For now, log your outdoor climbs.'**
-  String get logIndoorSoon;
+  /// **'Set up the gym you climb at first: its walls and colours.'**
+  String get logIndoorNoGym;
+
+  /// No description provided for @logIndoorNoWalls.
+  ///
+  /// In en, this message translates to:
+  /// **'This gym has no walls yet. Add them in Settings, under Gyms.'**
+  String get logIndoorNoWalls;
+
+  /// No description provided for @logIndoorGym.
+  ///
+  /// In en, this message translates to:
+  /// **'Gym'**
+  String get logIndoorGym;
+
+  /// No description provided for @logIndoorWall.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall'**
+  String get logIndoorWall;
+
+  /// No description provided for @logIndoorTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a colour each time you top it.'**
+  String get logIndoorTapHint;
+
+  /// No description provided for @logIndoorUngraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Topped'**
+  String get logIndoorUngraded;
+
+  /// No description provided for @logIndoorTopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Topped a {colour} on {kind}'**
+  String logIndoorTopped(String colour, String kind);
+
+  /// No description provided for @logIndoorAddedSend.
+  ///
+  /// In en, this message translates to:
+  /// **'{colour}: send added'**
+  String logIndoorAddedSend(String colour);
+
+  /// No description provided for @logIndoorAddedAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'{colour}: attempt added'**
+  String logIndoorAddedAttempt(String colour);
+
+  /// No description provided for @logIndoorUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get logIndoorUndo;
+
+  /// No description provided for @logIndoorDidntTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t top'**
+  String get logIndoorDidntTop;
+
+  /// No description provided for @logIndoorToppedIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Topped it'**
+  String get logIndoorToppedIt;
+
+  /// No description provided for @logIndoorTries.
+  ///
+  /// In en, this message translates to:
+  /// **'Tries'**
+  String get logIndoorTries;
+
+  /// No description provided for @logIndoorFewerTries.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer tries'**
+  String get logIndoorFewerTries;
+
+  /// No description provided for @logIndoorMoreTries.
+  ///
+  /// In en, this message translates to:
+  /// **'More tries'**
+  String get logIndoorMoreTries;
+
+  /// No description provided for @logIndoorRopeType.
+  ///
+  /// In en, this message translates to:
+  /// **'On the rope'**
+  String get logIndoorRopeType;
+
+  /// No description provided for @logIndoorThisSession.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{This session · 1 climb} other{This session · {count} climbs}}'**
+  String logIndoorThisSession(int count);
 
   /// No description provided for @logRoute.
   ///

@@ -742,8 +742,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIndoorHint => 'Walls and boards';
 
   @override
-  String get logIndoorSoon =>
-      'Gym climbs can be logged once gyms arrive. For now, log your outdoor climbs.';
+  String get logIndoorNoGym =>
+      'Set up the gym you climb at first: its walls and colours.';
+
+  @override
+  String get logIndoorNoWalls =>
+      'This gym has no walls yet. Add them in Settings, under Gyms.';
+
+  @override
+  String get logIndoorGym => 'Gym';
+
+  @override
+  String get logIndoorWall => 'Wall';
+
+  @override
+  String get logIndoorTapHint => 'Tap a colour each time you top it.';
+
+  @override
+  String get logIndoorUngraded => 'Topped';
+
+  @override
+  String logIndoorTopped(String colour, String kind) {
+    return 'Topped a $colour on $kind';
+  }
+
+  @override
+  String logIndoorAddedSend(String colour) {
+    return '$colour: send added';
+  }
+
+  @override
+  String logIndoorAddedAttempt(String colour) {
+    return '$colour: attempt added';
+  }
+
+  @override
+  String get logIndoorUndo => 'Undo';
+
+  @override
+  String get logIndoorDidntTop => 'Didn\'t top';
+
+  @override
+  String get logIndoorToppedIt => 'Topped it';
+
+  @override
+  String get logIndoorTries => 'Tries';
+
+  @override
+  String get logIndoorFewerTries => 'Fewer tries';
+
+  @override
+  String get logIndoorMoreTries => 'More tries';
+
+  @override
+  String get logIndoorRopeType => 'On the rope';
+
+  @override
+  String logIndoorThisSession(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'This session · $count climbs',
+      one: 'This session · 1 climb',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get logRoute => 'Route or problem';

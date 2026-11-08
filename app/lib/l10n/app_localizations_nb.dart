@@ -743,8 +743,71 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorHint => 'Vegger og brett';
 
   @override
-  String get logIndoorSoon =>
-      'Klatring inne kan logges når klatresentrene kommer. Foreløpig kan du logge klatring ute.';
+  String get logIndoorNoGym =>
+      'Legg først inn klatresenteret du klatrer på: veggene og fargene.';
+
+  @override
+  String get logIndoorNoWalls =>
+      'Dette klatresenteret har ingen vegger ennå. Legg dem inn under Innstillinger, Klatresentre.';
+
+  @override
+  String get logIndoorGym => 'Klatresenter';
+
+  @override
+  String get logIndoorWall => 'Vegg';
+
+  @override
+  String get logIndoorTapHint => 'Trykk på en farge hver gang du toppet den.';
+
+  @override
+  String get logIndoorUngraded => 'Toppet';
+
+  @override
+  String logIndoorTopped(String colour, String kind) {
+    return 'Toppet en $colour ($kind)';
+  }
+
+  @override
+  String logIndoorAddedSend(String colour) {
+    return '$colour: topp lagt til';
+  }
+
+  @override
+  String logIndoorAddedAttempt(String colour) {
+    return '$colour: forsøk lagt til';
+  }
+
+  @override
+  String get logIndoorUndo => 'Angre';
+
+  @override
+  String get logIndoorDidntTop => 'Toppet ikke';
+
+  @override
+  String get logIndoorToppedIt => 'Toppet den';
+
+  @override
+  String get logIndoorTries => 'Forsøk';
+
+  @override
+  String get logIndoorFewerTries => 'Færre forsøk';
+
+  @override
+  String get logIndoorMoreTries => 'Flere forsøk';
+
+  @override
+  String get logIndoorRopeType => 'På tauet';
+
+  @override
+  String logIndoorThisSession(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Denne økta · $count klatringer',
+      one: 'Denne økta · 1 klatring',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get logRoute => 'Rute eller problem';
