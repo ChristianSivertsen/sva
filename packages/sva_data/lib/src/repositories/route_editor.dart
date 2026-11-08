@@ -168,7 +168,7 @@ class RouteEditor {
         route.gradeId,
         for (final p in route.pitches) p.gradeId,
       ]) {
-        if (id != null) await _checkGrade(id, gradeType);
+        if (id != null) await checkGrade(db, id, gradeType);
       }
       final id = await _routes.createPrivate(
         RoutesCompanion(
@@ -309,7 +309,13 @@ class RouteEditor {
     return area;
   }
 
-  Future<void> _checkGrade(String id, String gradeType) async {
+  /// Throws [ArgumentError] unless grade [id] exists and is of
+  /// [gradeType] (`free_route` or `boulder`).
+  static Future<void> checkGrade(
+    SvaDatabase db,
+    String id,
+    String gradeType,
+  ) async {
     final row = await db
         .customSelect(
           'SELECT s.grade_type FROM grades g '

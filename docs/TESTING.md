@@ -14,7 +14,7 @@ Every ticket ships with tests for its core functionality, and every behaviour is
 
 ### Shared rule cases
 
-Rules that run both in the app and on the server (style and tries, gym route expiry) are written once as JSON cases in `shared/test_cases/` at the repository root, so the server tests can read them without reaching into a Dart package. Layer 1 and layer 4 both run the same file. That is one set of cases, not two overlapping test suites.
+Rules that run both in the app and on the server (style and tries) are written once as JSON cases in `shared/test_cases/` at the repository root, so the server tests can read them without reaching into a Dart package. Layer 1 and layer 4 both run the same file. That is one set of cases, not two overlapping test suites.
 
 ### Golden tests
 

@@ -5,6 +5,7 @@ import 'package:sva_data/src/database/sva_database.dart';
 import 'package:sva_data/src/ids.dart';
 import 'package:sva_data/src/repositories/gym_editor.dart';
 import 'package:sva_data/src/repositories/place_repositories.dart';
+import 'package:sva_data/src/repositories/route_editor.dart';
 import 'package:sva_data/src/repositories/session_repositories.dart';
 
 /// Longest note on a gym route, such as "the blue in the cave corner".
@@ -70,7 +71,8 @@ class GymRouteRepository {
     _checkDay(route.setOn, 'setOn');
     final note = route.note?.trim();
     if (note != null && note.length > maxSetterNoteLength) {
-      throw ArgumentError.value(route.note, 'note');
+      // The length, not the note: errors may end up in logs one day.
+      throw ArgumentError.value(note.length, 'note', 'too long');
     }
     if (route.angle case final angle?) {
       final defs = await _attributes.definitions(level: AttributeLevel.route);
@@ -83,6 +85,25 @@ class GymRouteRepository {
       final draft = await _gyms.newGymRoute(route.wallId, userId: userId);
       final gymId = draft.areaId.value;
       final boulder = draft.discipline.value == 'boulder';
+      // A colour gym's routes have a colour, a standard gym's a grade, and
+      // an ungraded gym's neither.
+      final grading =
+          (await (db.select(db.gymProfiles)..where(
+                    (p) => p.areaId.equals(gymId) & p.deletedAt.isNull(),
+                  ))
+                  .getSingleOrNull())
+              ?.grading ??
+          'none';
+      if (route.colourId != null && grading != 'colour') {
+        throw ArgumentError.value(
+          route.colourId,
+          'colourId',
+          'not a colour gym',
+        );
+      }
+      if (route.gradeId != null && grading != 'standard') {
+        throw ArgumentError.value(route.gradeId, 'gradeId', 'not a graded gym');
+      }
       if (route.colourId case final id?) {
         final colour =
             await (db.select(db.gymColourGrades)..where(
@@ -96,7 +117,9 @@ class GymRouteRepository {
         if (colour == null) throw ArgumentError.value(id, 'colourId');
       }
       final gradeType = boulder ? 'boulder' : 'free_route';
-      if (route.gradeId case final id?) await _checkGrade(id, gradeType);
+      if (route.gradeId case final id?) {
+        await RouteEditor.checkGrade(db, id, gradeType);
+      }
       final routeId = await _routes.createPrivate(
         draft.copyWith(
           gymColourGradeId: Value(route.colourId),
@@ -153,7 +176,6 @@ class GymRouteRepository {
                   r.areaId.equals(gymId) &
                   r.createdBy.equals(userId) &
                   r.kind.equals('gym') &
-                  r.status.equals('open') &
                   r.deletedAt.isNull(),
             ))
             .get();
@@ -165,7 +187,9 @@ class GymRouteRepository {
         boulder: route.discipline == 'boulder',
         gym: true,
       );
-      if (!isOpenProject(history, retired: false)) continue;
+      if (!isOpenProject(history, retired: route.status == 'retired')) {
+        continue;
+      }
       final last = await (db.select(
         db.sessions,
       )..where((s) => s.id.equals(entries.last.sessionId))).getSingle();
@@ -200,16 +224,24 @@ class GymRouteRepository {
     required String userId,
   }) async {
     _checkDay(on, 'on');
+    // A day ahead of the device's own date allows for time zones.
+    final latest = clock().add(const Duration(days: 1));
+    if (DateTime.parse(on).isAfter(latest)) {
+      throw ArgumentError.value(on, 'on', 'in the future');
+    }
     await db.transaction(() async {
       final wall = await _walls.get(wallId);
       if (wall == null || wall.ownerId != userId) {
         throw ArgumentError.value(wallId, 'wallId', 'no such wall');
       }
-      await _walls.update(
-        wallId,
-        GymWallsCompanion(lastResetOn: Value(on)),
-        userId: userId,
-      );
+      // An older reset logged late never moves the date back.
+      if (wall.lastResetOn == null || wall.lastResetOn!.compareTo(on) < 0) {
+        await _walls.update(
+          wallId,
+          GymWallsCompanion(lastResetOn: Value(on)),
+          userId: userId,
+        );
+      }
       for (final route in await stillUp(wallId, userId: userId)) {
         await _routes.update(
           route.id,
@@ -228,22 +260,6 @@ class GymRouteRepository {
     // the same.
     if (parsed == null || parsed.toIso8601String().substring(0, 10) != day) {
       throw ArgumentError.value(day, field);
-    }
-  }
-
-  Future<void> _checkGrade(String id, String gradeType) async {
-    final row = await db
-        .customSelect(
-          'SELECT s.grade_type FROM grades g '
-          'JOIN grade_systems s ON s.key = g.system_key '
-          'AND s.deleted_at IS NULL '
-          'WHERE g.id = ? AND g.deleted_at IS NULL',
-          variables: [Variable.withString(id)],
-          readsFrom: {db.grades, db.gradeSystems},
-        )
-        .getSingleOrNull();
-    if (row?.read<String>('grade_type') != gradeType) {
-      throw ArgumentError.value(id, 'gradeId', 'not a $gradeType grade');
     }
   }
 }

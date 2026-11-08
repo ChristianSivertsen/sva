@@ -1,4 +1,4 @@
-import 'package:sva_core/sva_core.dart';
+import 'package:sva_core/sva_core.dart' show AscentStyle;
 import 'package:sva_data/sva_data.dart';
 import 'package:test/test.dart';
 
@@ -88,16 +88,8 @@ void main() {
     expect(project.tries, 3);
     expect(project.lastTried, '2026-11-03');
 
-    // Gym routes reuse the style and tries rules (M1-4).
-    final history = RouteHistory.from(
-      await AscentRepository(db).routeLog(route, userId: 'me'),
-      boulder: true,
-      gym: true,
-    );
-    expect(history.allowedStyles, {AscentStyle.redpoint, AscentStyle.attempt});
-    expect(history.minTries(AscentStyle.redpoint), 4);
-    expect(history.check((style: AscentStyle.redpoint, tries: 4)), isEmpty);
-
+    // The rules themselves are M1-4's: a redpoint after 3 tries logs
+    // as try 4.
     final thursday = await session('2026-11-05');
     await climb(thursday, route, AscentStyle.redpoint, 4);
     expect(await routes.projects(gymId, userId: 'me'), isEmpty);
@@ -168,7 +160,7 @@ void main() {
       NewGymRoute(
         wallId: cave,
         setOn: '2026-11-03',
-        gradeId: seedId('grade:font:6A'),
+        colourId: blue,
         angle: 'angle.roof',
       ),
       userId: 'me',
@@ -184,17 +176,6 @@ void main() {
     expect(
       () => add(NewGymRoute(wallId: cave, setOn: '3 Nov')),
       throwsArgumentError,
-    );
-    expect(
-      () => add(
-        NewGymRoute(
-          wallId: cave,
-          setOn: '2026-11-03',
-          gradeId: seedId('grade:nor:6'),
-        ),
-      ),
-      throwsArgumentError,
-      reason: 'a route grade on a boulder wall',
     );
     expect(
       () =>
@@ -228,4 +209,84 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test(
+    "M3-3: a gym route's colour or grade follows the gym's grading",
+    () async {
+      // A colour gym takes colours, not grades.
+      expect(
+        () => routes.add(
+          NewGymRoute(
+            wallId: cave,
+            setOn: '2026-11-03',
+            gradeId: seedId('grade:font:6A'),
+          ),
+          userId: 'me',
+        ),
+        throwsArgumentError,
+      );
+
+      final gyms = GymEditor(db);
+      final graded = await gyms.addGym(
+        const NewGym(name: 'Harbour', countryCode: 'NO', grading: 'standard'),
+        walls: const [WallDraft(name: 'Cave', kind: 'boulder')],
+        userId: 'me',
+      );
+      final wall = (await gyms.setup(graded, userId: 'me'))!.walls.single.id;
+      final id = await routes.add(
+        NewGymRoute(
+          wallId: wall,
+          setOn: '2026-11-03',
+          gradeId: seedId('grade:font:6A'),
+        ),
+        userId: 'me',
+      );
+      final grade = await (db.select(
+        db.routeGrades,
+      )..where((g) => g.routeId.equals(id))).getSingle();
+      expect(grade.gradeId, seedId('grade:font:6A'));
+      expect(grade.gradeType, 'boulder');
+      expect(
+        () => routes.add(
+          NewGymRoute(
+            wallId: wall,
+            setOn: '2026-11-03',
+            gradeId: seedId('grade:nor:6'),
+          ),
+          userId: 'me',
+        ),
+        throwsArgumentError,
+        reason: 'a route grade on a boulder wall',
+      );
+      expect(
+        () => routes.add(
+          NewGymRoute(wallId: wall, setOn: '2026-11-03', colourId: blue),
+          userId: 'me',
+        ),
+        throwsArgumentError,
+        reason: 'a graded gym takes grades, not colours',
+      );
+    },
+  );
+
+  test(
+    'M3-3: a wall reset is never in the future and never moves back',
+    () async {
+      final clocked = GymRouteRepository(
+        db,
+        clock: () => DateTime.utc(2026, 11, 8),
+      );
+      await clocked.resetWall(cave, on: '2026-11-08', userId: 'me');
+      expect(
+        () => clocked.resetWall(cave, on: '2026-11-12', userId: 'me'),
+        throwsArgumentError,
+      );
+      // A reset logged late doesn't move the date back.
+      await clocked.resetWall(cave, on: '2026-11-01', userId: 'me');
+      expect(
+        (await GymWallRepository(db).get(cave))!.lastResetOn,
+        '2026-11-08',
+      );
+    },
+  );
 }
