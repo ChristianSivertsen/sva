@@ -3,6 +3,7 @@ import 'package:sva_core/sva_core.dart';
 import 'package:sva_data/src/attributes/attribute_repository.dart';
 import 'package:sva_data/src/database/sva_database.dart';
 import 'package:sva_data/src/ids.dart';
+import 'package:sva_data/src/repositories/gym_routes.dart';
 import 'package:sva_data/src/repositories/repository.dart';
 import 'package:sva_data/src/repositories/session_repositories.dart';
 
@@ -94,6 +95,64 @@ final class SessionEdit {
   final List<ClimbDraft> added;
 }
 
+/// One gym route in an indoor session: one logged before ([routeId]), or
+/// a new one on a wall, with a colour or a grade as the gym grades.
+final class IndoorRouteDraft {
+  const new({this.routeId, this.wallId, this.colourId, this.gradeId});
+
+  final String? routeId;
+  final String? wallId;
+  final String? colourId;
+  final String? gradeId;
+}
+
+/// One climb in an indoor session, on [route] (an index into
+/// [IndoorSessionDraft.routes]), as the gym log worked it out (sva_core
+/// `gymTap`).
+final class IndoorClimbDraft {
+  const new({
+    required this.route,
+    required this.style,
+    required this.tries,
+    required this.ascentType,
+  });
+
+  final int route;
+  final AscentStyle style;
+  final int tries;
+
+  /// One of `indoorAscentTypes`: `boulder` on a boulder wall, `lead` or
+  /// `toprope` on a rope wall.
+  final String ascentType;
+}
+
+/// An indoor session as the gym log fills it in.
+final class IndoorSessionDraft {
+  const new({
+    required this.gymId,
+    required this.localDate,
+    required this.tz,
+    required this.visibility,
+    required this.routes,
+    required this.climbs,
+    this.title,
+  });
+
+  final String gymId;
+
+  /// `YYYY-MM-DD` in the session's own time zone.
+  final String localDate;
+
+  /// IANA time zone, such as `Europe/Oslo`.
+  final String tz;
+  final String visibility;
+  final List<IndoorRouteDraft> routes;
+
+  /// In the order they were climbed.
+  final List<IndoorClimbDraft> climbs;
+  final String? title;
+}
+
 /// Thrown when a climb breaks the style and tries rules (M1-4).
 class ClimbRejected implements Exception {
   new(this.index, this.issues);
@@ -160,18 +219,7 @@ class SessionLogger {
     if (draft.climbs.isEmpty) {
       throw ArgumentError.value(draft.climbs, 'climbs', 'none');
     }
-    // A real calendar day (no 30 February), and not after tomorrow, which
-    // covers every time zone ahead of the device's clock.
-    final day = DateTime.tryParse(draft.localDate);
-    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(draft.localDate) ||
-        day == null ||
-        !day.toIso8601String().startsWith(draft.localDate) ||
-        day.isAfter(clock().add(const Duration(days: 1)))) {
-      throw ArgumentError.value(draft.localDate, 'localDate');
-    }
-    if (!RegExp(r'^[A-Za-z_+\-]+(/[A-Za-z0-9_+\-]+)*$').hasMatch(draft.tz)) {
-      throw ArgumentError.value(draft.tz, 'tz');
-    }
+    _checkDayAndZone(draft.localDate, draft.tz);
     checkVisibility(draft.visibility);
     final (:title, :description, :partners) = await _checkSessionFields(
       title: draft.title,
@@ -201,6 +249,151 @@ class SessionLogger {
       await _addPartners(sessionId, draft.visibility, partners, userId);
       return sessionId;
     });
+  }
+
+  /// Logs an indoor session [draft] at a gym for [userId], with any new
+  /// gym routes it climbed, in one transaction. Returns the session's id.
+  ///
+  /// Each climb is checked with the same style and tries rules as outdoors
+  /// (gym routes flash rather than onsight), against everything already
+  /// logged on its route, as if this session came last. A climb that breaks
+  /// them throws [ClimbRejected]; bad values throw [ArgumentError]. Either
+  /// way nothing is written.
+  Future<String> logIndoor(
+    IndoorSessionDraft draft, {
+    required String userId,
+  }) async {
+    if (draft.climbs.isEmpty) {
+      throw ArgumentError.value(draft.climbs, 'climbs', 'none');
+    }
+    _checkDayAndZone(draft.localDate, draft.tz);
+    checkVisibility(draft.visibility);
+    final (:title, description: _, partners: _) = await _checkSessionFields(
+      title: draft.title,
+      description: null,
+      conditions: null,
+      partners: const [],
+    );
+    for (final (i, route) in draft.routes.indexed) {
+      if ((route.routeId == null) == (route.wallId == null)) {
+        throw ArgumentError.value(i, 'routes', 'a route or a wall, not both');
+      }
+    }
+    for (final climb in draft.climbs) {
+      if (climb.route < 0 || climb.route >= draft.routes.length) {
+        throw ArgumentError.value(climb.route, 'route');
+      }
+      if (!indoorAscentTypes.contains(climb.ascentType)) {
+        throw ArgumentError.value(climb.ascentType, 'ascentType');
+      }
+    }
+
+    return await db.transaction(() async {
+      final gym =
+          await (db.select(db.areas)..where(
+                (a) =>
+                    a.id.equals(draft.gymId) &
+                    a.type.equals('gym') &
+                    a.deletedAt.isNull() &
+                    (a.visibility.equals('public') |
+                        a.createdBy.equals(userId)),
+              ))
+              .getSingleOrNull();
+      if (gym == null) throw ArgumentError.value(draft.gymId, 'gymId');
+
+      // The session's routes, the new ones added now, with what was logged
+      // on each before.
+      final gymRoutes = GymRouteRepository(db, clock: clock);
+      final routes = <Route>[];
+      final logs = <List<LoggedAscent>>[];
+      for (final route in draft.routes) {
+        final id =
+            route.routeId ??
+            await gymRoutes.add(
+              NewGymRoute(
+                wallId: route.wallId!,
+                setOn: draft.localDate,
+                colourId: route.colourId,
+                gradeId: route.gradeId,
+              ),
+              userId: userId,
+            );
+        final row =
+            await (db.select(db.routes)..where(
+                  (r) =>
+                      r.id.equals(id) &
+                      r.kind.equals('gym') &
+                      r.areaId.equals(draft.gymId) &
+                      r.createdBy.equals(userId) &
+                      r.deletedAt.isNull(),
+                ))
+                .getSingleOrNull();
+        if (row == null) throw ArgumentError.value(id, 'routeId');
+        routes.add(row);
+        logs.add(
+          route.routeId == null
+              ? []
+              : await _ascents.routeLog(id, userId: userId),
+        );
+      }
+
+      for (final (i, climb) in draft.climbs.indexed) {
+        final route = routes[climb.route];
+        final boulder = route.discipline == 'boulder';
+        if (boulder != (climb.ascentType == 'boulder')) {
+          throw ArgumentError.value(climb.ascentType, 'ascentType');
+        }
+        final ascent = (style: climb.style, tries: climb.tries);
+        final issues = RouteHistory.from(
+          logs[climb.route],
+          boulder: boulder,
+          gym: true,
+        ).check(ascent);
+        if (issues.isNotEmpty) throw ClimbRejected(i, issues);
+        logs[climb.route].add(ascent);
+      }
+
+      final sessionId = await _sessions.create(
+        SessionsCompanion(
+          setting: const Value('indoor'),
+          areaId: Value(draft.gymId),
+          localDate: Value(draft.localDate),
+          tz: Value(draft.tz),
+          visibility: Value(draft.visibility),
+          title: Value(title),
+        ),
+        userId: userId,
+      );
+      for (final (i, climb) in draft.climbs.indexed) {
+        await _ascents.create(
+          AscentsCompanion(
+            sessionId: Value(sessionId),
+            routeId: Value(routes[climb.route].id),
+            ordinal: Value(i + 1),
+            ascentType: Value(climb.ascentType),
+            style: Value(climb.style.name),
+            tries: Value(climb.tries),
+          ),
+          userId: userId,
+        );
+      }
+      return sessionId;
+    });
+  }
+
+  /// A real calendar day (no 30 February), not after tomorrow, which covers
+  /// every time zone ahead of the device's clock, and an IANA time zone.
+  void _checkDayAndZone(String localDate, String tz) {
+    final day = DateTime.tryParse(localDate);
+    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(localDate) ||
+        day == null ||
+        !day.toIso8601String().startsWith(localDate) ||
+        day.isAfter(clock().add(const Duration(days: 1)))) {
+      throw ArgumentError.value(localDate, 'localDate');
+    }
+    if (!RegExp(r'^[A-Za-z_+\-]+(/[A-Za-z0-9_+\-]+)*$').hasMatch(tz)) {
+      throw ArgumentError.value(tz, 'tz');
+    }
   }
 
   /// Applies [edit] to one of [userId]'s outdoor sessions in one
