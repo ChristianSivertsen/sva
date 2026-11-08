@@ -229,7 +229,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get gymFormColoursNote =>
-      'Gradespenn er valgfritt. Med et spenn havner klatringer på fargen midt i det i gradediagrammene. Uten teller de likevel med i volum, vinkel og grep.';
+      'Gradespenn er valgfritt. Med spenn teller klatringer på fargen med midt i spennet i gradediagrammene. Uten spenn teller de likevel med i volum, vinkel og grep.';
 
   @override
   String get gymFormColourAdd => 'Legg til farge';
@@ -247,7 +247,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String gymFormColourEasier(String name) {
-    return 'Flytt $name opp, som lettere';
+    return 'Flytt $name opp';
   }
 
   @override
@@ -262,10 +262,20 @@ class AppLocalizationsNb extends AppLocalizations {
   String get gymFormColourRoutes => 'Ruter';
 
   @override
-  String get gymFormColourUnmapped => 'Uten grader';
+  String get gymFormColourUnmapped => 'Ikke satt';
 
   @override
   String get gymFormColourTo => 'til';
+
+  @override
+  String gymFormColourRangeFrom(String name, String kind) {
+    return 'Letteste grad for $name ($kind)';
+  }
+
+  @override
+  String gymFormColourRangeTo(String name, String kind) {
+    return 'Vanskeligste grad for $name ($kind)';
+  }
 
   @override
   String get gymColourGreen => 'Grønn';

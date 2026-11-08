@@ -247,7 +247,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gymFormColourEasier(String name) {
-    return 'Move $name up, as easier';
+    return 'Move $name up';
   }
 
   @override
@@ -266,6 +266,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gymFormColourTo => 'to';
+
+  @override
+  String gymFormColourRangeFrom(String name, String kind) {
+    return 'Easiest grade for $name ($kind)';
+  }
+
+  @override
+  String gymFormColourRangeTo(String name, String kind) {
+    return 'Hardest grade for $name ($kind)';
+  }
 
   @override
   String get gymColourGreen => 'Green';

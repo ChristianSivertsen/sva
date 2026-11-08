@@ -196,6 +196,17 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
   });
 
   Future<void> _save() async {
+    // Colours are kept, out of sight, while another grading is picked. One
+    // without a name would fail to save, so show them again with the
+    // message where the user can see it.
+    if (_grading != 'colour' &&
+        _colours.any((c) => c.name.text.trim().isEmpty)) {
+      setState(() => _grading = 'colour');
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _form.currentState?.validate(),
+      );
+      return;
+    }
     if (!_form.currentState!.validate()) return;
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);

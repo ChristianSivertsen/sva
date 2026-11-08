@@ -337,7 +337,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(field('Colour 3'), 'Yellow');
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Move Yellow up, as easier'));
+    await tester.tap(find.byTooltip('Move Yellow up'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Remove Green'));
     await tester.pumpAndSettle();
@@ -372,5 +372,65 @@ void main() {
         ),
       ],
     );
+  });
+
+  testWidgets("M3-2: a gym's saved colours load into the editor, and a "
+      'hidden colour without a name is shown again', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final font = gradeSystems.firstWhere((s) => s.key == 'font');
+    final range = colourRange(font.parse('6A')!, font.parse('6B')!);
+    await open(
+      tester,
+      existing: (
+        gym: _gym(),
+        grading: 'colour',
+        walls: [_wall('w1', 'Cave', 'boulder', 4)],
+        colours: [
+          GymColourGrade(
+            id: 'c1',
+            createdAt: DateTime.utc(2026),
+            updatedAt: DateTime.utc(2026),
+            ownerId: localUserId,
+            gymId: 'g1',
+            sort: 0,
+            name: 'Blue',
+            colourHex: '#2F6FD1',
+            boulderMinScore: range.min,
+            boulderMaxScore: range.max,
+          ),
+        ],
+      ),
+    );
+    expect(field('Blue'), findsOneWidget);
+    // The range pickers say which colour and grade they set.
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Easiest grade for Blue \(Boulders\)')),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'^Hardest grade for Blue \(Boulders\)')),
+      findsOneWidget,
+    );
+
+    // Clear the name, then hide the colours behind another grading.
+    await tester.enterText(field('Blue'), '');
+    await tester.tap(find.widgetWithText(FilterChip, 'Ungraded'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save gym'));
+    await tester.pumpAndSettle();
+    expect(find.text('Colours, easiest first'), findsOneWidget);
+    expect(find.text('Give the colour a name.'), findsOneWidget);
+    expect(gyms.called, isNull, reason: 'nothing saved');
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Colour name'),
+      'Blå',
+    );
+    await tester.tap(find.text('Save gym'));
+    await tester.pumpAndSettle();
+    expect(gyms.colours!.single.id, 'c1');
+    expect(gyms.colours!.single.name, 'Blå');
+    expect(gyms.colours!.single.boulder, range);
+    semantics.dispose();
   });
 }

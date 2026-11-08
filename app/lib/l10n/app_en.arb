@@ -135,7 +135,7 @@
       }
     }
   },
-  "gymFormColourEasier": "Move {name} up, as easier",
+  "gymFormColourEasier": "Move {name} up",
   "@gymFormColourEasier": {
     "placeholders": {
       "name": {
@@ -155,6 +155,28 @@
   "gymFormColourRoutes": "Routes",
   "gymFormColourUnmapped": "Not mapped",
   "gymFormColourTo": "to",
+  "gymFormColourRangeFrom": "Easiest grade for {name} ({kind})",
+  "gymFormColourRangeTo": "Hardest grade for {name} ({kind})",
+  "@gymFormColourRangeTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "@gymFormColourRangeFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "gymColourGreen": "Green",
   "gymColourBlue": "Blue",
   "gymColourNew": "Colour {number}",

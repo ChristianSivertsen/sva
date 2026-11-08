@@ -177,6 +177,8 @@ class _ColourCard extends StatelessWidget {
         ColorPickerType.wheel: true,
       },
     );
+    // The form may have closed while the dialog was open.
+    if (!context.mounted) return;
     colour.colour = picked;
     onChanged();
   }
@@ -253,6 +255,7 @@ class _ColourCard extends StatelessWidget {
             if (boulders case final system?)
               _RangePicker(
                 label: l10n.gymFormColourBoulders,
+                colourName: colour.name,
                 system: system,
                 range: colour.boulder,
                 onChanged: (range) {
@@ -263,6 +266,7 @@ class _ColourCard extends StatelessWidget {
             if (routes case final system?)
               _RangePicker(
                 label: l10n.gymFormColourRoutes,
+                colourName: colour.name,
                 system: system,
                 range: colour.route,
                 onChanged: (range) {
@@ -282,12 +286,17 @@ class _ColourCard extends StatelessWidget {
 class _RangePicker extends StatelessWidget {
   const new({
     required this.label,
+    required this.colourName,
     required this.system,
     required this.range,
     required this.onChanged,
   });
 
+  /// The kind of climb, such as `Boulders`.
   final String label;
+
+  /// For the pickers' screen-reader labels, which follow the typed name.
+  final TextEditingController colourName;
   final GradeSystem system;
   final ScoreRange? range;
   final ValueChanged<ScoreRange?> onChanged;
@@ -320,33 +329,59 @@ class _RangePicker extends StatelessWidget {
           width: SvaSpace.huge * 2,
           child: Text(label, style: context.svaText.label),
         ),
-        DropdownButton<Grade?>(
-          value: from,
-          hint: Text(l10n.gymFormColourUnmapped),
-          items: [item(null), for (final g in system.grades) item(g)],
-          onChanged: (grade) => onChanged(switch (grade) {
-            null => null,
-            // A harder end that is still fine stays; otherwise the range
-            // becomes the one grade.
-            final grade when to != null && to.scoreHigh >= grade.scoreLow =>
-              colourRange(grade, to),
-            final grade => colourRange(grade, grade),
-          }),
+        _Labelled(
+          name: colourName,
+          label: (name) => l10n.gymFormColourRangeFrom(name, label),
+          child: DropdownButton<Grade?>(
+            value: from,
+            hint: Text(l10n.gymFormColourUnmapped),
+            items: [item(null), for (final g in system.grades) item(g)],
+            onChanged: (grade) => onChanged(switch (grade) {
+              null => null,
+              // A harder end that is still fine stays; otherwise the range
+              // becomes the one grade.
+              final grade when to != null && to.scoreHigh >= grade.scoreLow =>
+                colourRange(grade, to),
+              final grade => colourRange(grade, grade),
+            }),
+          ),
         ),
         if (from != null) ...[
-          Text(l10n.gymFormColourTo),
-          DropdownButton<Grade>(
-            value: to,
-            items: [
-              for (final g in system.grades)
-                if (g.scoreHigh >= from.scoreLow)
-                  DropdownMenuItem(value: g, child: Text(g.label)),
-            ],
-            onChanged: (grade) =>
-                onChanged(grade == null ? null : colourRange(from, grade)),
+          ExcludeSemantics(child: Text(l10n.gymFormColourTo)),
+          _Labelled(
+            name: colourName,
+            label: (name) => l10n.gymFormColourRangeTo(name, label),
+            child: DropdownButton<Grade>(
+              value: to,
+              items: [
+                for (final g in system.grades)
+                  if (g.scoreHigh >= from.scoreLow)
+                    DropdownMenuItem(value: g, child: Text(g.label)),
+              ],
+              onChanged: (grade) =>
+                  onChanged(grade == null ? null : colourRange(from, grade)),
+            ),
           ),
         ],
       ],
     );
   }
+}
+
+/// [child] with a screen-reader [label] that follows the colour's [name]
+/// as it is typed.
+class _Labelled extends StatelessWidget {
+  const new({required this.name, required this.label, required this.child});
+
+  final TextEditingController name;
+  final String Function(String name) label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: name,
+    builder: (context, child) =>
+        Semantics(label: label(name.text), child: child),
+    child: child,
+  );
 }

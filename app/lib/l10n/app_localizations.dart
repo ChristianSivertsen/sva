@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @gymFormColourEasier.
   ///
   /// In en, this message translates to:
-  /// **'Move {name} up, as easier'**
+  /// **'Move {name} up'**
   String gymFormColourEasier(String name);
 
   /// No description provided for @gymFormColourRemove.
@@ -457,6 +457,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'to'**
   String get gymFormColourTo;
+
+  /// No description provided for @gymFormColourRangeFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Easiest grade for {name} ({kind})'**
+  String gymFormColourRangeFrom(String name, String kind);
+
+  /// No description provided for @gymFormColourRangeTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Hardest grade for {name} ({kind})'**
+  String gymFormColourRangeTo(String name, String kind);
 
   /// No description provided for @gymColourGreen.
   ///
