@@ -125,9 +125,9 @@ A request about a row is handled by the moderators of the nearest crag or gym ab
 | id | uuid | |
 | area_id | uuid → areas | One row per gym (unique on the server) |
 | grading | text | `colour`, `standard`, `none` |
-| route_expiry_weeks | integer | When gym routes expire if no reset is logged |
+| route_expiry_weeks | integer | Not used: gym routes have no timer (PLAN.md decision 4). Kept until a later schema change drops it |
 
-**gym_walls**: personal for now, like gym routes. `id`, `owner_id`, `gym_id` → areas, `name`, `height_m`, `angle` (`angle.slab`, `angle.vertical`, `angle.overhang`, `angle.roof`), `kind` (`rope`, `boulder`), `last_reset_on` (date), `sort`.
+**gym_walls**: personal for now, like gym routes. `id`, `owner_id`, `gym_id` → areas, `name`, `height_m`, `angle` (`angle.slab`, `angle.vertical`, `angle.overhang`, `angle.roof`), `kind` (`rope`, `boulder`), `last_reset_on` (date; marking a reset retires the open gym routes on the wall), `sort`. Marking a gym route as gone and resetting a wall are personal while gym routes are private. If gym routes become shared, both need a per-user marker or a moderator step instead of setting a shared route's `status`, and a server version of the reset.
 
 **gym_colour_grades**: one row per colour, easiest first. Personal for now, like gym walls.
 
@@ -170,14 +170,14 @@ A request about a row is handled by the moderators of the nearest crag or gym ab
 | season_notes | text | Ice formation, conditions windows |
 | first_ascent | text | Names |
 | first_ascent_year | integer | |
-| status | text | `open`, `closed`, `seasonal`, `retired` (for example, a broken hold) |
+| status | text | `open`, `closed`, `seasonal`, `retired` (for example, a broken hold, or a gym route that is gone or whose wall was reset) |
 | visibility | text | `public` (shared) or `private`. Gym routes are always `private` for now |
 | consensus_score | numeric | Server-computed from the personal grades on ascents. Public routes only |
 | quality_avg | numeric | Server-computed cache |
 | gym_wall_id | uuid → gym_walls | Gym routes only |
 | gym_colour_grade_id | uuid → gym_colour_grades | Gym routes with colour grading |
 | set_on | date | Gym routes only |
-| expires_on | date | Gym routes only; from the gym's expiry weeks or the wall reset |
+| expires_on | date | Not used: gym routes have no timer and end by `status` (PLAN.md decision 4). Kept until a later schema change drops it |
 | setter_note | text | Gym routes, for example "the blue in the cave corner" |
 | merged_into_id | uuid → routes | Set when merged into another route |
 | created_by | uuid → profiles | Credit only. While the route is private, only this user can see and edit it |
@@ -457,7 +457,7 @@ Pieces are grouped by model in the UI, so two #1 cams show as "×2" but keep the
 - Merging moves everyone's ascents, media, topos, ticklist items and projects to the remaining row, keeps the old name as an alias and keeps the old row with `merged_into_id` set. A trigger on new ascents and media follows `merged_into_id` to the remaining row, for devices that were offline during the merge.
 - When a request is saved, a trigger notifies each moderator of its crag or gym (`mod.request`). When it is decided, the person who made it is notified (`mod.resolved`).
 - Triggers check style and tries rules on ascents, using the same test cases as `sva_core`.
-- Scheduled jobs: expire gym routes, recompute consensus grades and quality.
+- Scheduled jobs: recompute consensus grades and quality.
 - Account deletion: personal rows are deleted, including private routes, gym routes and open requests. Ascents on shared routes are kept without an owner and marked private, so consensus grades stay correct. Shared topo photos are kept, without the credit.
 
 ## On the device

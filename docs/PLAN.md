@@ -49,14 +49,14 @@ The rule is: **anything that must be correct lives on the server.** The app runs
 
 | Logic | Where | Why |
 |---|---|---|
-| Data integrity: style and tries rules, repeats, gym route expiry, who can see a post | Postgres (constraints, triggers, functions) | No client or app version can break the data |
+| Data integrity: style and tries rules, repeats, who can see a post | Postgres (constraints, triggers, functions) | No client or app version can break the data |
 | Social operations: friend requests, accepting shared sessions, kudos, endorsements, blocking | Postgres functions | One code path for all clients |
 | Shared route data: consensus grades, merges, moderator requests | Postgres functions and scheduled jobs | Computed once on the server |
 | Grade systems, attribute definitions, gym colour scales | Data in tables | Every client reads the same definitions |
 | Stats, insights, skill levels | Shared Dart package on the local database | Must work offline; Flutter web can reuse it |
 | Push, weather, share images | Edge Functions | Server-side and the same for every client |
 
-Rules that exist in both Dart and Postgres (style and tries, gym route expiry) share one set of test cases, run against both, so they cannot drift apart. The API itself is documented in `docs/API.md` (issue M11-1).
+Rules that exist in both Dart and Postgres (style and tries) share one set of test cases, run against both, so they cannot drift apart. The API itself is documented in `docs/API.md` (issue M11-1).
 
 ### Code layout
 
@@ -81,7 +81,7 @@ prototype/                 HTML prototype (reference only)
 1. **Routes.** One shared route database, organised as crag → sector → route. Crags, sectors and routes belong to nobody; ascents, grade opinions and photos are each person's own rows that point at them. Each route has a consensus grade. Each ascent stores the official grade at the time of logging and your personal grade or feel. Each crag or gym has moderators. Anyone can request an edit or add a route, but a moderator of that crag accepts or rejects it, and is notified of every request. A new route is the creator's private route until it is accepted. New routes are checked against nearby routes with similar names to avoid duplicates, and a moderator can merge a duplicate without losing history. Users can offer a photo as a shared topo, which a moderator must accept. Private routes exist for secret boulders and projects.
 2. **Partner tagging.** Tagging sends a request. When accepted, a linked copy of the session is added to the partner's log, which they edit themselves. On multipitch routes you choose who led each pitch, and each climber's rack is recorded.
 3. **Trips.** Optional level above sessions, with a name, dates, place and people.
-4. **Gym climbs.** Temporary gym routes identified by wall, colour and date set. They expire after a per-gym number of weeks or when a wall is marked as reset. Tries add up across sessions, so the same style rules work indoors and outdoors. Gym routes never appear in the outdoor route list. For now, gym routes, walls and colour grades are private to each user; only the gym itself is shared.
+4. **Gym climbs.** Temporary gym routes identified by wall, colour (or grade) and date set. There is no timer: a route you tried but did not send stays a project until you send it, its wall is marked as reset, or you mark it as gone. Tries add up across sessions, so the same style rules work indoors and outdoors. Gym routes never appear in the outdoor route list. For now, gym routes, walls and colour grades are private to each user; only the gym itself is shared.
 5. **Sync.** Offline-first. Every write goes to the local database, then syncs. Each row has one owner. Shared sessions are linked copies, and shared routes change only through requests a moderator accepts. Conflicts on your own data are resolved per field, last edit wins. Deletes are soft. Media uploads in the background.
 6. **Privacy.** Each post is public, friends-only or private, with a default in settings. Photo GPS data is stripped on upload, and a crag or boulder location can be hidden.
 7. **Style and tries.** Onsight and flash mean 1 try, and only outdoor rope climbs can be onsighted (boulders and gym climbs flash). A redpoint needs at least 2 tries, counting earlier logged attempts on the same route. A route you have sent before logs as a repeat.

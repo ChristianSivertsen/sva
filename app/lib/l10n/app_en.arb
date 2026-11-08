@@ -220,6 +220,50 @@
       }
     }
   },
+  "gymFormWallReset": "Reset today",
+  "gymFormWallResetLabel": "Mark {name} as reset today",
+  "@gymFormWallResetLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallResetOn": "Last reset {date}",
+  "@gymFormWallResetOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallNeverReset": "Not reset yet",
+  "gymFormWallResetDone": "{name} is marked as reset today. Its old routes are no longer suggested.",
+  "@gymFormWallResetDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallResetTitle": "Mark {name} as reset today?",
+  "@gymFormWallResetTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallResetBody": "Routes on {name} that you haven't sent end as projects and are no longer suggested. Your climbs on them stay in your log.",
+  "@gymFormWallResetBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gymFormWallResetCancel": "Not now",
+  "gymFormWallResetConfirm": "Mark as reset",
   "gymFormSave": "Save gym",
   "gymFormNotYours": "This gym is shared, so only your walls can be changed here.",
   "settingsAbout": "About",
