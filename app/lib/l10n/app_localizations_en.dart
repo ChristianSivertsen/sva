@@ -770,6 +770,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIndoorGym => 'Gym';
 
   @override
+  String get logIndoorFoundHere => 'Found from your location';
+
+  @override
   String get logIndoorWall => 'Wall';
 
   @override

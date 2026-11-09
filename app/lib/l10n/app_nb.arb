@@ -166,6 +166,7 @@
   "logIndoorNoGym": "Legg inn klatresenteret ditt først: veggene og fargene.",
   "logIndoorNoWalls": "Dette klatresenteret har ingen vegger ennå. Legg dem inn under Innstillinger, Klatresentre.",
   "logIndoorGym": "Klatresenter",
+  "logIndoorFoundHere": "Funnet ut fra hvor du er",
   "logIndoorWall": "Vegg",
   "logIndoorTapHint": "Trykk på en farge hver gang du toppet den.",
   "logIndoorUngraded": "Klatring",
