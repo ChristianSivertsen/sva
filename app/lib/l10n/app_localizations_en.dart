@@ -742,8 +742,88 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIndoorHint => 'Walls and boards';
 
   @override
-  String get logIndoorSoon =>
-      'Gym climbs can be logged once gyms arrive. For now, log your outdoor climbs.';
+  String get logIndoorNoTiles =>
+      'Nothing to tap yet. Add colours or choose a grading for this gym in Settings, under Gyms.';
+
+  @override
+  String get logIndoorLoadFailed =>
+      'Couldn\'t load your gyms. Close the log and try again.';
+
+  @override
+  String logIndoorKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'boulder': 'boulder',
+      'rope': 'rope',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get logIndoorNoGym => 'Set up your gym first: its walls and colours.';
+
+  @override
+  String get logIndoorNoWalls =>
+      'This gym has no walls yet. Add them in Settings, under Gyms.';
+
+  @override
+  String get logIndoorGym => 'Gym';
+
+  @override
+  String get logIndoorWall => 'Wall';
+
+  @override
+  String get logIndoorTapHint => 'Tap a colour each time you top it.';
+
+  @override
+  String get logIndoorUngraded => 'Climb';
+
+  @override
+  String logIndoorTopped(String colour, String kind) {
+    return 'Topped $colour, $kind';
+  }
+
+  @override
+  String logIndoorAddedSend(String colour) {
+    return '$colour: send added';
+  }
+
+  @override
+  String logIndoorAddedAttempt(String colour) {
+    return '$colour: attempt added';
+  }
+
+  @override
+  String get logIndoorUndo => 'Undo';
+
+  @override
+  String get logIndoorDidntTop => 'Didn\'t top';
+
+  @override
+  String get logIndoorToppedIt => 'Topped it';
+
+  @override
+  String get logIndoorTries => 'Tries';
+
+  @override
+  String get logIndoorFewerTries => 'Fewer tries';
+
+  @override
+  String get logIndoorMoreTries => 'More tries';
+
+  @override
+  String get logIndoorRopeType => 'On the rope';
+
+  @override
+  String logIndoorThisSession(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'This session · $count climbs',
+      one: 'This session · 1 climb',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get logRoute => 'Route or problem';

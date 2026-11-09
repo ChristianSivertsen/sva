@@ -82,6 +82,7 @@ Future<ProviderContainer> _start(
   Map<String, RouteHit> hits = const {},
   Map<String, List<String>> partners = const {},
   Map<String, List<String>> tags = const {},
+  Map<String, GymRouteLabel> gymRoutes = const {},
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -96,6 +97,10 @@ Future<ProviderContainer> _start(
       sessionWeatherProvider.overrideWith((ref, id) => Stream.value(null)),
       sessionTagsProvider.overrideWith((ref, id) async => tags[id] ?? []),
       sessionProvider.overrideWith((ref, id) => Stream.value(null)),
+      gymRouteLabelProvider.overrideWith((ref, id) async => gymRoutes[id]),
+      placeNameProvider.overrideWith(
+        (ref, id) async => id == 'g1' ? 'Gnisten' : null,
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -339,5 +344,58 @@ void main() {
     await tester.drag(list, const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(limits, [20, 40, 60]);
+  });
+
+  testWidgets('M3-4: a gym session card shows the gym and its climbs', (
+    tester,
+  ) async {
+    final session = Session(
+      id: 'gym',
+      createdAt: DateTime.utc(2026, 11),
+      updatedAt: DateTime.utc(2026, 11),
+      ownerId: localUserId,
+      visibility: 'private',
+      setting: 'indoor',
+      areaId: 'g1',
+      localDate: '2026-11-05',
+      tz: 'Europe/Oslo',
+      locationHidden: false,
+    );
+    Ascent climb(int ordinal, String routeId) => _climb(
+      'gym',
+      ordinal,
+      routeId,
+      'flash',
+    ).copyWith(setting: 'indoor', discipline: 'boulder');
+    await _start(
+      tester,
+      sessions: (limit) => Stream.value([session]),
+      climbs: {
+        'gym': [climb(1, 'blue'), climb(2, 'graded')],
+      },
+      gymRoutes: {
+        'blue': (colour: 'Blue', grade: null, gradeSystem: null, wall: 'Cave'),
+        'graded': (
+          colour: null,
+          grade: '6A',
+          gradeSystem: 'font',
+          wall: 'Board',
+        ),
+      },
+    );
+    final card = find.byType(FeedCard);
+    Finder inCard(Finder f) => find.descendant(of: card, matching: f);
+    expect(inCard(find.text('Gnisten')), findsOneWidget);
+    // A colour climb is its colour on its wall; a graded one is its wall,
+    // with the grade as a badge.
+    expect(
+      inCard(find.textContaining('Blue  Cave', findRichText: true)),
+      findsOneWidget,
+    );
+    expect(
+      inCard(find.textContaining('Board', findRichText: true)),
+      findsOneWidget,
+    );
+    expect(inCard(find.text('6A')), findsOneWidget);
   });
 }

@@ -8,6 +8,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
 import 'package:sva/src/logging/climb_editor.dart';
+import 'package:sva/src/logging/indoor_log.dart';
+import 'package:sva/src/logging/time_zone.dart';
 import 'package:sva/src/places/form_parts.dart';
 import 'package:sva/src/places/grade_badge.dart';
 import 'package:sva/src/places/labels.dart';
@@ -416,10 +418,7 @@ class _LogSheetState extends ConsumerState<LogSheet> {
                           formGap,
                         ],
                         if (!outdoor)
-                          Text(
-                            l10n.logIndoorSoon,
-                            style: text.body.copyWith(color: colors.textMuted),
-                          )
+                          IndoorLog(onSaved: () => closeLogSheet(context))
                         else ...[
                           for (final (i, climb) in _climbs.indexed)
                             _PendingRow(
@@ -489,17 +488,6 @@ class _LogSheetState extends ConsumerState<LogSheet> {
       ),
     );
   }
-}
-
-/// An IANA time zone for the device's current offset. Dart has no IANA
-/// name for the device zone without a native plugin, so whole-hour offsets
-/// become `Etc/GMT±n` (whose sign is inverted by convention) and others
-/// fall back to `Etc/UTC`. Enough to place a day; DST rules are not needed.
-String deviceTimeZone(Duration offset) {
-  if (offset.inMinutes % 60 != 0) return 'Etc/UTC';
-  final hours = offset.inHours;
-  if (hours == 0) return 'Etc/UTC';
-  return 'Etc/GMT${hours > 0 ? '-' : '+'}${hours.abs()}';
 }
 
 class _SettingPicker extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva_core/sva_core.dart' show AttributeValues;
-import 'package:sva_data/sva_data.dart' show WeatherSnapshot;
+import 'package:sva_data/sva_data.dart' show GymRouteLabel, WeatherSnapshot;
 
 /// Route details shown as tags, in this order. Discipline is shown on its
 /// own line, so it is not here.
@@ -54,3 +54,12 @@ String weatherLine(AppLocalizations l10n, WeatherSnapshot weather) {
       l10n.weatherWind(number.format(ms.round())),
   ].join(' · ');
 }
+
+/// How a gym climb is named, since gym routes have none: its colour with
+/// its wall as the place, or in a graded or ungraded gym its wall (the
+/// grade shows as a badge).
+({String name, String? place}) gymClimbText(GymRouteLabel label) =>
+    switch (label.colour) {
+      final colour? => (name: colour, place: label.wall),
+      null => (name: label.wall ?? '', place: null),
+    };

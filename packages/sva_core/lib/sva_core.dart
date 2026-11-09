@@ -3,6 +3,7 @@ library;
 
 export 'src/ascents/ascent_rules.dart';
 export 'src/ascents/gym_projects.dart';
+export 'src/ascents/gym_session.dart';
 export 'src/attributes/attribute_def.dart';
 export 'src/attributes/inheritance.dart';
 export 'src/grades/colour_grades.dart';

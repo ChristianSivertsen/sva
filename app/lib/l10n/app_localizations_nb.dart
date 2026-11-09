@@ -743,8 +743,89 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorHint => 'Vegger og brett';
 
   @override
-  String get logIndoorSoon =>
-      'Klatring inne kan logges når klatresentrene kommer. Foreløpig kan du logge klatring ute.';
+  String get logIndoorNoTiles =>
+      'Ingenting å trykke på ennå. Legg inn farger eller velg gradering for klatresenteret under Innstillinger, Klatresentre.';
+
+  @override
+  String get logIndoorLoadFailed =>
+      'Kunne ikke laste klatresentrene. Lukk loggen og prøv igjen.';
+
+  @override
+  String logIndoorKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'boulder': 'buldring',
+      'rope': 'tau',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get logIndoorNoGym =>
+      'Legg inn klatresenteret ditt først: veggene og fargene.';
+
+  @override
+  String get logIndoorNoWalls =>
+      'Dette klatresenteret har ingen vegger ennå. Legg dem inn under Innstillinger, Klatresentre.';
+
+  @override
+  String get logIndoorGym => 'Klatresenter';
+
+  @override
+  String get logIndoorWall => 'Vegg';
+
+  @override
+  String get logIndoorTapHint => 'Trykk på en farge hver gang du toppet den.';
+
+  @override
+  String get logIndoorUngraded => 'Klatring';
+
+  @override
+  String logIndoorTopped(String colour, String kind) {
+    return 'Toppet $colour, $kind';
+  }
+
+  @override
+  String logIndoorAddedSend(String colour) {
+    return '$colour: topp lagt til';
+  }
+
+  @override
+  String logIndoorAddedAttempt(String colour) {
+    return '$colour: forsøk lagt til';
+  }
+
+  @override
+  String get logIndoorUndo => 'Angre';
+
+  @override
+  String get logIndoorDidntTop => 'Toppet ikke';
+
+  @override
+  String get logIndoorToppedIt => 'Toppet den';
+
+  @override
+  String get logIndoorTries => 'Forsøk';
+
+  @override
+  String get logIndoorFewerTries => 'Færre forsøk';
+
+  @override
+  String get logIndoorMoreTries => 'Flere forsøk';
+
+  @override
+  String get logIndoorRopeType => 'På tauet';
+
+  @override
+  String logIndoorThisSession(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Denne økta · $count klatringer',
+      one: 'Denne økta · 1 klatring',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get logRoute => 'Rute eller problem';

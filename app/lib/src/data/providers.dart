@@ -234,6 +234,33 @@ final Provider<GymRouteRepository> gymRouteRepositoryProvider = Provider(
   (ref) => GymRouteRepository(ref.watch(databaseProvider)),
 );
 
+/// A gym with its grading and the user's walls and colours, or `null`
+/// when it is gone.
+final FutureProviderFamily<GymSetup?, String> gymSetupProvider = FutureProvider
+    .autoDispose
+    .family(
+      (ref, gymId) => ref
+          .watch(gymEditorProvider)
+          .setup(gymId, userId: ref.watch(currentUserIdProvider)),
+    );
+
+/// How one of the user's gym routes is shown (it has no name), or `null`
+/// for any other route.
+final FutureProviderFamily<GymRouteLabel?, String> gymRouteLabelProvider =
+    FutureProvider.autoDispose.family(
+      (ref, routeId) => ref
+          .watch(gymRouteRepositoryProvider)
+          .label(routeId, userId: ref.watch(currentUserIdProvider)),
+    );
+
+/// A place's name, such as a session's gym, or `null` when it is gone.
+final FutureProviderFamily<String?, String> placeNameProvider = FutureProvider
+    .autoDispose
+    .family(
+      (ref, areaId) async =>
+          (await ref.watch(areaRepositoryProvider).get(areaId))?.name,
+    );
+
 /// The gyms the user can see, by name, live.
 final StreamProvider<List<Area>> gymsProvider = StreamProvider.autoDispose(
   (ref) => ref.watch(areaRepositoryProvider).watchOfTypes({
