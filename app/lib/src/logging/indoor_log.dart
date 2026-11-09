@@ -45,27 +45,33 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
 
   /// The gym to log at: the one picked (or pinned by the first climb),
   /// else the one you are at, else the one logged at last, else the first
-  /// set up.
-  String? _gym(List<Area> gyms) {
-    if (_gymId case final id? when gyms.any((g) => g.id == id)) return id;
-    if (_nearby(gyms) case final id?) return id;
+  /// set up. `here` says it was found from your location; `waiting` that
+  /// the position is still coming, so the log does not open on one gym and
+  /// then jump to another.
+  ({String? id, bool here, bool waiting}) _choose(List<Area> gyms) {
+    if (_gymId case final id? when gyms.any((g) => g.id == id)) {
+      return (id: id, here: false, waiting: false);
+    }
+    // Location is asked for only when it could change which gym opens: more
+    // than one gym, and at least one with a location.
+    if (gyms.length > 1 &&
+        gyms.any((g) => g.latitude != null && g.longitude != null)) {
+      final here = ref.watch(hereProvider);
+      if (here.isLoading) return (id: null, here: false, waiting: true);
+      if (here.value case final p?) {
+        final nearest = nearestWithin(p.lat, p.lon, [
+          for (final g in gyms) (g.id, g.latitude, g.longitude),
+        ]);
+        if (nearest != null) return (id: nearest, here: true, waiting: false);
+      }
+    }
     final sessions = ref.watch(mySessionsProvider).value ?? const [];
     final last = sessions
         .where((s) => s.setting == 'indoor' && s.areaId != null)
         .map((s) => s.areaId)
         .firstOrNull;
-    if (gyms.any((g) => g.id == last)) return last;
-    return gyms.firstOrNull?.id;
-  }
-
-  /// The gym you are at, from the phone's rough position, if one is close
-  /// enough (sva_core `nearestWithin`).
-  String? _nearby(List<Area> gyms) {
-    final here = ref.watch(hereProvider).value;
-    if (here == null) return null;
-    return nearestWithin(here.lat, here.lon, [
-      for (final g in gyms) (g.id, g.latitude, g.longitude),
-    ]);
+    final id = gyms.any((g) => g.id == last) ? last : gyms.firstOrNull?.id;
+    return (id: id, here: false, waiting: false);
   }
 
   void _tap(String gymId, String wallId, String kind, GymTile tile) {
@@ -174,8 +180,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     if (gymsValue.hasError) return message(l10n.logIndoorLoadFailed);
     final gyms = gymsValue.value;
     if (gyms == null) return const _Loading();
-    final gymId = _gym(gyms);
-    final foundHere = _gymId == null && gymId != null && _nearby(gyms) == gymId;
+    final (id: gymId, here: foundHere, :waiting) = _choose(gyms);
+    if (waiting) return const _Loading();
     if (gymId == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +200,6 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     final setup = setupValue.value;
     if (setup == null) return const _Loading();
 
-    // Boulder first, as in the prototype and most gym sessions.
     final kinds = [
       for (final k in const ['boulder', 'rope'])
         if (setup.walls.any((w) => w.kind == k)) k,

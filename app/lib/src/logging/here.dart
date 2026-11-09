@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sva_data/sva_data.dart' show LatLon;
@@ -26,18 +27,29 @@ final FutureProvider<LatLon?> hereProvider = FutureProvider.autoDispose((
         permission != LocationPermission.always) {
       return null;
     }
-    final last = await Geolocator.getLastKnownPosition();
+    // On Android, the system's own location service rather than Google
+    // Play's, so no other service is involved.
+    final android = defaultTargetPlatform == TargetPlatform.android;
+    final last = await Geolocator.getLastKnownPosition(
+      forceAndroidLocationManager: android,
+    );
     if (last != null && DateTime.now().difference(last.timestamp) < _recent) {
       return (lat: last.latitude, lon: last.longitude);
     }
     final now = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.low,
-        timeLimit: _wait,
-      ),
+      locationSettings: android
+          ? AndroidSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: _wait,
+              forceLocationManager: true,
+            )
+          : const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: _wait,
+            ),
     );
     return (lat: now.latitude, lon: now.longitude);
-  } on Object {
+  } on Exception {
     // No plugin (tests), a timeout, or the platform said no: the log works
     // without a position.
     return null;

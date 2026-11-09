@@ -90,6 +90,7 @@ void main() {
     List<GymWall>? walls,
     List<GymColourGrade>? colours,
     LatLon? here,
+    void Function()? onAskedWhere,
   }) async {
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 1;
@@ -100,7 +101,10 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         sessionLoggerProvider.overrideWithValue(logger),
-        hereProvider.overrideWith((ref) async => here),
+        hereProvider.overrideWith((ref) async {
+          onAskedWhere?.call();
+          return here;
+        }),
         lastSettingProvider.overrideWith((ref) async => 'indoor'),
         mySessionsProvider.overrideWith(
           (ref) => Stream.value([
@@ -317,5 +321,34 @@ void main() {
       isTrue,
     );
     expect(inSheet(find.text('Found from your location')), findsNothing);
+  });
+
+  testWidgets('M3-4: a gym you pick wins over the one you are at', (
+    tester,
+  ) async {
+    final gyms = [
+      _area('g0', 'Another gym', lat: 59.9330, lon: 10.7660),
+      _area('g1', 'Gnisten', lat: 69.9689, lon: 23.2716),
+    ];
+    await open(tester, gyms: gyms, here: (lat: 59.9350, lon: 10.7700));
+    await tap(tester, inSheet(find.widgetWithText(FilterChip, 'Gnisten')));
+    expect(
+      tester
+          .widget<FilterChip>(
+            inSheet(find.widgetWithText(FilterChip, 'Gnisten')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(inSheet(find.text('Found from your location')), findsNothing);
+  });
+
+  testWidgets('M3-4: location is not asked for when it cannot help', (
+    tester,
+  ) async {
+    var asked = 0;
+    // One gym, or gyms without a location: nothing to choose between.
+    await open(tester, gyms: [_gym], onAskedWhere: () => asked++);
+    expect(asked, 0);
   });
 }

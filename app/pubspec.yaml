@@ -31,8 +31,10 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  geolocator_platform_interface: ^4.4.1
   integration_test:
     sdk: flutter
+  plugin_platform_interface: ^2.1.8
 
 flutter:
   uses-material-design: true
