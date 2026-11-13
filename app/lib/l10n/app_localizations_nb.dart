@@ -321,6 +321,22 @@ class AppLocalizationsNb extends AppLocalizations {
   String get gymFormWallAngle => 'Vinkel';
 
   @override
+  String get gymFormWallDegrees => 'Grader forbi loddrett';
+
+  @override
+  String get gymFormWallDegreesHelp =>
+      'Valgfritt. Negativt for plater. Setter vinkelen for deg.';
+
+  @override
+  String get gymFormWallDegreesInvalid =>
+      'Bruk hele grader fra -45 til 90, eller la feltet stå tomt.';
+
+  @override
+  String wallAngleDegrees(String angle, int degrees) {
+    return '$angle $degrees°';
+  }
+
+  @override
   String gymFormWallRemove(String name) {
     return 'Fjern $name';
   }

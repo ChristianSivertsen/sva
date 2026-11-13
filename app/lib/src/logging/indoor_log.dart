@@ -279,7 +279,13 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                       if (w.heightM case final h?)
                         '${number.format(h)} ${l10n.feedStatMetres}',
                       if (w.angle case final a?)
-                        l10n.attributeValue(a.replaceAll('.', '_')),
+                        switch (w.angleDeg) {
+                          final deg? => l10n.wallAngleDegrees(
+                            l10n.attributeValue(a.replaceAll('.', '_')),
+                            deg,
+                          ),
+                          null => l10n.attributeValue(a.replaceAll('.', '_')),
+                        },
                     ].join(' · '),
                   ),
               ],

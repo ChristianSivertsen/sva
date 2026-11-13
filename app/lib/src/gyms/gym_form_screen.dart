@@ -11,6 +11,7 @@ import 'package:sva/src/gyms/colour_scale_editor.dart';
 import 'package:sva/src/places/form_parts.dart';
 import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/places/location_picker.dart';
+import 'package:sva_core/sva_core.dart' show angleForDegrees, isWallAngleDeg;
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
 
@@ -40,13 +41,18 @@ class _Wall {
     this.id,
     double? heightM,
     this.angle,
+    int? angleDeg,
     this.lastResetOn,
   }) : name = TextEditingController(text: name),
-       height = TextEditingController(text: _metres(heightM));
+       height = TextEditingController(text: _metres(heightM)),
+       degrees = TextEditingController(text: angleDeg?.toString() ?? '');
 
   final String? id;
   final TextEditingController name;
   final TextEditingController height;
+
+  /// Degrees past vertical; empty when not known.
+  final TextEditingController degrees;
   String kind;
   String? angle;
 
@@ -65,6 +71,7 @@ class _Wall {
   void dispose() {
     name.dispose();
     height.dispose();
+    degrees.dispose();
   }
 }
 
@@ -151,6 +158,7 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
             kind: w.kind,
             heightM: w.heightM,
             angle: w.angle,
+            angleDeg: w.angleDeg,
             lastResetOn: w.lastResetOn,
           ),
       ]);
@@ -290,6 +298,7 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
           kind: w.kind,
           heightM: parseDecimal(w.height.text),
           angle: w.angle,
+          angleDeg: _degrees(w.degrees.text),
         ),
     ];
     // Colours are kept while another grading is picked, so switching back
@@ -453,8 +462,11 @@ class _GymFormScreenState extends ConsumerState<GymFormScreen> {
   }
 }
 
-/// One wall: name, type, height and angle, and for a saved wall its last
-/// reset.
+/// The whole degrees in [text], or `null` when empty or not a number.
+int? _degrees(String text) => int.tryParse(text.trim().replaceAll('−', '-'));
+
+/// One wall: name, type, height, angle and degrees, and for a saved wall
+/// its last reset.
 class _WallCard extends StatelessWidget {
   const new({
     required this.wall,
@@ -547,7 +559,36 @@ class _WallCard extends StatelessWidget {
               selected: {?wall.angle},
               onChanged: (v) {
                 wall.angle = v.firstOrNull;
+                // Degrees that say otherwise no longer hold.
+                if (_degrees(wall.degrees.text) case final d?
+                    when isWallAngleDeg(d) &&
+                        angleForDegrees(d) != wall.angle) {
+                  wall.degrees.clear();
+                }
                 onChanged();
+              },
+            ),
+            TextFormField(
+              controller: wall.degrees,
+              decoration: InputDecoration(
+                labelText: l10n.gymFormWallDegrees,
+                helperText: l10n.gymFormWallDegreesHelp,
+                helperMaxLines: 2,
+                suffixText: '°',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(signed: true),
+              onChanged: (v) {
+                if (_degrees(v) case final d? when isWallAngleDeg(d)) {
+                  wall.angle = angleForDegrees(d);
+                  onChanged();
+                }
+              },
+              validator: (v) {
+                if ((v ?? '').trim().isEmpty) return null;
+                final d = _degrees(v!);
+                return d == null || !isWallAngleDeg(d)
+                    ? l10n.gymFormWallDegreesInvalid
+                    : null;
               },
             ),
             if (onReset != null)

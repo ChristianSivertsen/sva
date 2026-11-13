@@ -321,6 +321,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gymFormWallAngle => 'Angle';
 
   @override
+  String get gymFormWallDegrees => 'Degrees past vertical';
+
+  @override
+  String get gymFormWallDegreesHelp =>
+      'Optional. Negative for slabs. Sets the angle for you.';
+
+  @override
+  String get gymFormWallDegreesInvalid =>
+      'Use whole degrees from -45 to 90, or leave it empty.';
+
+  @override
+  String wallAngleDegrees(String angle, int degrees) {
+    return '$angle $degrees°';
+  }
+
+  @override
   String gymFormWallRemove(String name) {
     return 'Remove $name';
   }

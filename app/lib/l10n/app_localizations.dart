@@ -536,6 +536,30 @@ abstract class AppLocalizations {
   /// **'Angle'**
   String get gymFormWallAngle;
 
+  /// Optional field for a wall's exact angle.
+  ///
+  /// In en, this message translates to:
+  /// **'Degrees past vertical'**
+  String get gymFormWallDegrees;
+
+  /// No description provided for @gymFormWallDegreesHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Negative for slabs. Sets the angle for you.'**
+  String get gymFormWallDegreesHelp;
+
+  /// No description provided for @gymFormWallDegreesInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use whole degrees from -45 to 90, or leave it empty.'**
+  String get gymFormWallDegreesInvalid;
+
+  /// A wall's angle type with its degrees, such as 'Overhang 30°'.
+  ///
+  /// In en, this message translates to:
+  /// **'{angle} {degrees}°'**
+  String wallAngleDegrees(String angle, int degrees);
+
   /// No description provided for @gymFormWallRemove.
   ///
   /// In en, this message translates to:
