@@ -10,6 +10,7 @@ export 'src/grades/colour_grades.dart';
 export 'src/grades/grade_system.dart';
 export 'src/grades/grade_tables.dart';
 export 'src/places/nearest.dart';
+export 'src/places/wall_angle.dart';
 export 'src/search/name_keys.dart';
 export 'src/seasons/season.dart';
 export 'src/stats/session_totals.dart';
