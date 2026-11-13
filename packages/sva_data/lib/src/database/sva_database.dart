@@ -72,7 +72,7 @@ class SvaDatabase extends _$SvaDatabase {
   new onDevice(File file) : this(NativeDatabase.createInBackground(file));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -92,6 +92,10 @@ class SvaDatabase extends _$SvaDatabase {
       if (from < 3 && to >= 3) {
         // The app language, chosen in settings (M2-8).
         await m.addColumn(profiles, profiles.language);
+      }
+      if (from < 4 && to >= 4) {
+        // A wall's exact angle in degrees (M3-6).
+        await m.addColumn(gymWalls, gymWalls.angleDeg);
       }
     },
   );

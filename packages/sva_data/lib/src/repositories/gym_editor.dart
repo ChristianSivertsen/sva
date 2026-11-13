@@ -44,6 +44,7 @@ final class WallDraft {
     this.id,
     this.heightM,
     this.angle,
+    this.angleDeg,
   });
 
   final String? id;
@@ -53,8 +54,19 @@ final class WallDraft {
   final String kind;
   final double? heightM;
 
-  /// An `angle.*` value key.
+  /// An `angle.*` value key. Ignored when [angleDeg] is set: the angle
+  /// then follows from the degrees.
   final String? angle;
+
+  /// Degrees past vertical, negative for slabs: whole numbers from
+  /// [minWallAngleDeg] to [maxWallAngleDeg].
+  final int? angleDeg;
+
+  /// The angle type to store: from the degrees when they are set.
+  String? get angleType => switch (angleDeg) {
+    final deg? => angleForDegrees(deg),
+    null => angle,
+  };
 }
 
 /// One colour in a gym's colour scale, as the gym form fills it in. With
@@ -275,7 +287,11 @@ class GymEditor {
           when !h.isFinite || h < minWallHeightM || h > maxWallHeightM) {
         throw ArgumentError.value(h, 'heightM');
       }
-      if (wall.angle case final a? when angle == null || !angle.accepts([a])) {
+      if (wall.angleDeg case final d? when !isWallAngleDeg(d)) {
+        throw ArgumentError.value(d, 'angleDeg');
+      }
+      if (wall.angleType case final a?
+          when angle == null || !angle.accepts([a])) {
         throw ArgumentError.value(a, 'angle');
       }
     }
@@ -327,7 +343,8 @@ class GymEditor {
         name: Value(wall.name.trim()),
         kind: Value(wall.kind),
         heightM: Value(wall.heightM),
-        angle: Value(wall.angle),
+        angle: Value(wall.angleType),
+        angleDeg: Value(wall.angleDeg),
         sort: Value(sort),
       );
       if (wall.id case final id?) {

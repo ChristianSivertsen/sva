@@ -77,7 +77,7 @@ Future<void> seedExampleData(SvaDatabase db, {required String userId}) async {
       ),
       mode: InsertMode.insertOrIgnore,
     );
-    for (final (i, (name, kind, height, angle)) in _exampleWalls.indexed) {
+    for (final (i, (name, kind, height, angle, deg)) in _exampleWalls.indexed) {
       b.insert(
         db.gymWalls,
         GymWallsCompanion.insert(
@@ -90,6 +90,7 @@ Future<void> seedExampleData(SvaDatabase db, {required String userId}) async {
           kind: kind,
           heightM: Value(height),
           angle: Value(angle),
+          angleDeg: Value(deg),
           sort: Value(i),
         ),
         mode: InsertMode.insertOrIgnore,
@@ -326,12 +327,13 @@ const _routes = {
   'Nordlys': ('Hanshelleren', 'sport', 'angle.roof'),
 };
 
-/// The example gym's walls: name, kind, height in metres and angle.
-const _exampleWalls = [
-  ('Cave', 'boulder', 4.5, 'angle.overhang'),
-  ('Board', 'boulder', 3.5, 'angle.overhang'),
-  ('Slab corner', 'boulder', 4.0, 'angle.slab'),
-  ('Main wall', 'rope', 15.0, 'angle.vertical'),
+/// The example gym's walls: name, kind, height in metres, angle and
+/// degrees where known.
+const _exampleWalls = <(String, String, double, String, int?)>[
+  ('Cave', 'boulder', 4.5, 'angle.overhang', 30),
+  ('Board', 'boulder', 3.5, 'angle.overhang', 40),
+  ('Slab corner', 'boulder', 4.0, 'angle.slab', null),
+  ('Main wall', 'rope', 15.0, 'angle.vertical', null),
 ];
 
 /// The example gym's colours, easiest first.
@@ -378,7 +380,7 @@ Set<String> exampleIds(String userId) => {
     for (final d in ['2025-11-10', '2026-04-02', '2026-10-01']) 'result $d',
     'goal offwidth',
     'gym profile',
-    for (final (name, _, _, _) in _exampleWalls) 'wall $name',
+    for (final (name, _, _, _, _) in _exampleWalls) 'wall $name',
     for (final (name, _) in _exampleColours) 'colour $name',
   ])
     _exampleId(userId, name),

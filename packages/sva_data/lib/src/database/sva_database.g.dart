@@ -2605,6 +2605,17 @@ class $GymWallsTable extends GymWalls with TableInfo<$GymWallsTable, GymWall> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _angleDegMeta = const VerificationMeta(
+    'angleDeg',
+  );
+  @override
+  late final GeneratedColumn<int> angleDeg = GeneratedColumn<int>(
+    'angle_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _kindMeta = const VerificationMeta('kind');
   @override
   late final GeneratedColumn<String> kind = GeneratedColumn<String>(
@@ -2646,6 +2657,7 @@ class $GymWallsTable extends GymWalls with TableInfo<$GymWallsTable, GymWall> {
     name,
     heightM,
     angle,
+    angleDeg,
     kind,
     lastResetOn,
     sort,
@@ -2725,6 +2737,12 @@ class $GymWallsTable extends GymWalls with TableInfo<$GymWallsTable, GymWall> {
         angle.isAcceptableOrUnknown(data['angle']!, _angleMeta),
       );
     }
+    if (data.containsKey('angle_deg')) {
+      context.handle(
+        _angleDegMeta,
+        angleDeg.isAcceptableOrUnknown(data['angle_deg']!, _angleDegMeta),
+      );
+    }
     if (data.containsKey('kind')) {
       context.handle(
         _kindMeta,
@@ -2793,6 +2811,10 @@ class $GymWallsTable extends GymWalls with TableInfo<$GymWallsTable, GymWall> {
         DriftSqlType.string,
         data['${effectivePrefix}angle'],
       ),
+      angleDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}angle_deg'],
+      ),
       kind: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}kind'],
@@ -2828,6 +2850,10 @@ class GymWall extends DataClass implements Insertable<GymWall> {
   final double? heightM;
   final String? angle;
 
+  /// Degrees past vertical, negative for slabs (M3-6). When set, [angle]
+  /// follows from it.
+  final int? angleDeg;
+
   /// `rope` or `boulder`.
   final String kind;
 
@@ -2844,6 +2870,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
     required this.name,
     this.heightM,
     this.angle,
+    this.angleDeg,
     required this.kind,
     this.lastResetOn,
     required this.sort,
@@ -2865,6 +2892,9 @@ class GymWall extends DataClass implements Insertable<GymWall> {
     }
     if (!nullToAbsent || angle != null) {
       map['angle'] = Variable<String>(angle);
+    }
+    if (!nullToAbsent || angleDeg != null) {
+      map['angle_deg'] = Variable<int>(angleDeg);
     }
     map['kind'] = Variable<String>(kind);
     if (!nullToAbsent || lastResetOn != null) {
@@ -2891,6 +2921,9 @@ class GymWall extends DataClass implements Insertable<GymWall> {
       angle: angle == null && nullToAbsent
           ? const Value.absent()
           : Value(angle),
+      angleDeg: angleDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(angleDeg),
       kind: Value(kind),
       lastResetOn: lastResetOn == null && nullToAbsent
           ? const Value.absent()
@@ -2914,6 +2947,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
       name: serializer.fromJson<String>(json['name']),
       heightM: serializer.fromJson<double?>(json['heightM']),
       angle: serializer.fromJson<String?>(json['angle']),
+      angleDeg: serializer.fromJson<int?>(json['angleDeg']),
       kind: serializer.fromJson<String>(json['kind']),
       lastResetOn: serializer.fromJson<String?>(json['lastResetOn']),
       sort: serializer.fromJson<int>(json['sort']),
@@ -2932,6 +2966,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
       'name': serializer.toJson<String>(name),
       'heightM': serializer.toJson<double?>(heightM),
       'angle': serializer.toJson<String?>(angle),
+      'angleDeg': serializer.toJson<int?>(angleDeg),
       'kind': serializer.toJson<String>(kind),
       'lastResetOn': serializer.toJson<String?>(lastResetOn),
       'sort': serializer.toJson<int>(sort),
@@ -2948,6 +2983,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
     String? name,
     Value<double?> heightM = const Value.absent(),
     Value<String?> angle = const Value.absent(),
+    Value<int?> angleDeg = const Value.absent(),
     String? kind,
     Value<String?> lastResetOn = const Value.absent(),
     int? sort,
@@ -2961,6 +2997,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
     name: name ?? this.name,
     heightM: heightM.present ? heightM.value : this.heightM,
     angle: angle.present ? angle.value : this.angle,
+    angleDeg: angleDeg.present ? angleDeg.value : this.angleDeg,
     kind: kind ?? this.kind,
     lastResetOn: lastResetOn.present ? lastResetOn.value : this.lastResetOn,
     sort: sort ?? this.sort,
@@ -2976,6 +3013,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
       name: data.name.present ? data.name.value : this.name,
       heightM: data.heightM.present ? data.heightM.value : this.heightM,
       angle: data.angle.present ? data.angle.value : this.angle,
+      angleDeg: data.angleDeg.present ? data.angleDeg.value : this.angleDeg,
       kind: data.kind.present ? data.kind.value : this.kind,
       lastResetOn: data.lastResetOn.present
           ? data.lastResetOn.value
@@ -2996,6 +3034,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
           ..write('name: $name, ')
           ..write('heightM: $heightM, ')
           ..write('angle: $angle, ')
+          ..write('angleDeg: $angleDeg, ')
           ..write('kind: $kind, ')
           ..write('lastResetOn: $lastResetOn, ')
           ..write('sort: $sort')
@@ -3014,6 +3053,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
     name,
     heightM,
     angle,
+    angleDeg,
     kind,
     lastResetOn,
     sort,
@@ -3031,6 +3071,7 @@ class GymWall extends DataClass implements Insertable<GymWall> {
           other.name == this.name &&
           other.heightM == this.heightM &&
           other.angle == this.angle &&
+          other.angleDeg == this.angleDeg &&
           other.kind == this.kind &&
           other.lastResetOn == this.lastResetOn &&
           other.sort == this.sort);
@@ -3046,6 +3087,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
   final Value<String> name;
   final Value<double?> heightM;
   final Value<String?> angle;
+  final Value<int?> angleDeg;
   final Value<String> kind;
   final Value<String?> lastResetOn;
   final Value<int> sort;
@@ -3060,6 +3102,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
     this.name = const Value.absent(),
     this.heightM = const Value.absent(),
     this.angle = const Value.absent(),
+    this.angleDeg = const Value.absent(),
     this.kind = const Value.absent(),
     this.lastResetOn = const Value.absent(),
     this.sort = const Value.absent(),
@@ -3075,6 +3118,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
     required String name,
     this.heightM = const Value.absent(),
     this.angle = const Value.absent(),
+    this.angleDeg = const Value.absent(),
     required String kind,
     this.lastResetOn = const Value.absent(),
     this.sort = const Value.absent(),
@@ -3096,6 +3140,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
     Expression<String>? name,
     Expression<double>? heightM,
     Expression<String>? angle,
+    Expression<int>? angleDeg,
     Expression<String>? kind,
     Expression<String>? lastResetOn,
     Expression<int>? sort,
@@ -3111,6 +3156,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
       if (name != null) 'name': name,
       if (heightM != null) 'height_m': heightM,
       if (angle != null) 'angle': angle,
+      if (angleDeg != null) 'angle_deg': angleDeg,
       if (kind != null) 'kind': kind,
       if (lastResetOn != null) 'last_reset_on': lastResetOn,
       if (sort != null) 'sort': sort,
@@ -3128,6 +3174,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
     Value<String>? name,
     Value<double?>? heightM,
     Value<String?>? angle,
+    Value<int?>? angleDeg,
     Value<String>? kind,
     Value<String?>? lastResetOn,
     Value<int>? sort,
@@ -3143,6 +3190,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
       name: name ?? this.name,
       heightM: heightM ?? this.heightM,
       angle: angle ?? this.angle,
+      angleDeg: angleDeg ?? this.angleDeg,
       kind: kind ?? this.kind,
       lastResetOn: lastResetOn ?? this.lastResetOn,
       sort: sort ?? this.sort,
@@ -3180,6 +3228,9 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
     if (angle.present) {
       map['angle'] = Variable<String>(angle.value);
     }
+    if (angleDeg.present) {
+      map['angle_deg'] = Variable<int>(angleDeg.value);
+    }
     if (kind.present) {
       map['kind'] = Variable<String>(kind.value);
     }
@@ -3207,6 +3258,7 @@ class GymWallsCompanion extends UpdateCompanion<GymWall> {
           ..write('name: $name, ')
           ..write('heightM: $heightM, ')
           ..write('angle: $angle, ')
+          ..write('angleDeg: $angleDeg, ')
           ..write('kind: $kind, ')
           ..write('lastResetOn: $lastResetOn, ')
           ..write('sort: $sort, ')
@@ -28124,6 +28176,7 @@ typedef $$GymWallsTableCreateCompanionBuilder = GymWallsCompanion Function({
   required String name,
   Value<double?> heightM,
   Value<String?> angle,
+  Value<int?> angleDeg,
   required String kind,
   Value<String?> lastResetOn,
   Value<int> sort,
@@ -28139,6 +28192,7 @@ typedef $$GymWallsTableUpdateCompanionBuilder = GymWallsCompanion Function({
   Value<String> name,
   Value<double?> heightM,
   Value<String?> angle,
+  Value<int?> angleDeg,
   Value<String> kind,
   Value<String?> lastResetOn,
   Value<int> sort,
@@ -28196,6 +28250,11 @@ class $$GymWallsTableFilterComposer
 
   ColumnFilters<String> get angle => $composableBuilder(
     column: $table.angle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get angleDeg => $composableBuilder(
+    column: $table.angleDeg,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -28269,6 +28328,11 @@ class $$GymWallsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get angleDeg => $composableBuilder(
+    column: $table.angleDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get kind => $composableBuilder(
     column: $table.kind,
     builder: (column) => ColumnOrderings(column),
@@ -28321,6 +28385,9 @@ class $$GymWallsTableAnnotationComposer
   GeneratedColumn<String> get angle =>
       $composableBuilder(column: $table.angle, builder: (column) => column);
 
+  GeneratedColumn<int> get angleDeg =>
+      $composableBuilder(column: $table.angleDeg, builder: (column) => column);
+
   GeneratedColumn<String> get kind =>
       $composableBuilder(column: $table.kind, builder: (column) => column);
 
@@ -28370,6 +28437,7 @@ class $$GymWallsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<double?> heightM = const Value.absent(),
                 Value<String?> angle = const Value.absent(),
+                Value<int?> angleDeg = const Value.absent(),
                 Value<String> kind = const Value.absent(),
                 Value<String?> lastResetOn = const Value.absent(),
                 Value<int> sort = const Value.absent(),
@@ -28384,6 +28452,7 @@ class $$GymWallsTableTableManager
                 name: name,
                 heightM: heightM,
                 angle: angle,
+                angleDeg: angleDeg,
                 kind: kind,
                 lastResetOn: lastResetOn,
                 sort: sort,
@@ -28400,6 +28469,7 @@ class $$GymWallsTableTableManager
                 required String name,
                 Value<double?> heightM = const Value.absent(),
                 Value<String?> angle = const Value.absent(),
+                Value<int?> angleDeg = const Value.absent(),
                 required String kind,
                 Value<String?> lastResetOn = const Value.absent(),
                 Value<int> sort = const Value.absent(),
@@ -28414,6 +28484,7 @@ class $$GymWallsTableTableManager
                 name: name,
                 heightM: heightM,
                 angle: angle,
+                angleDeg: angleDeg,
                 kind: kind,
                 lastResetOn: lastResetOn,
                 sort: sort,
