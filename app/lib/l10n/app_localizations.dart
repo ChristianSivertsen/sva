@@ -1094,6 +1094,12 @@ abstract class AppLocalizations {
   /// **'Gym'**
   String get logIndoorGym;
 
+  /// No description provided for @logIndoorFoundHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Found from your location'**
+  String get logIndoorFoundHere;
+
   /// No description provided for @logIndoorWall.
   ///
   /// In en, this message translates to:

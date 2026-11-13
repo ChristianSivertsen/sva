@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator_platform_interface/geolocator_platform_interface.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/main.dart' as app;
@@ -20,6 +21,9 @@ import 'package:sva_ui/sva_ui.dart';
 /// Debug builds start with the example data (M1-5).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // Flows never wait on the system's location dialog: location is off, so
+  // the gym log opens on the gym you logged at last.
+  GeolocatorPlatform.instance = _LocationOff();
 
   testWidgets('M0-8: app starts and every tab can be opened', (tester) async {
     await app.main();
@@ -275,4 +279,10 @@ _SheetHelpers _sheetHelpers(WidgetTester tester) {
   }
 
   return (inSheet: inSheet, reveal: reveal, tap: tap);
+}
+
+/// A phone with location turned off.
+class _LocationOff extends GeolocatorPlatform {
+  @override
+  Future<bool> isLocationServiceEnabled() async => false;
 }

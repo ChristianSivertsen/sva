@@ -7,11 +7,12 @@ import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
 import 'package:sva/src/logging/gym_tap_card.dart';
 import 'package:sva/src/logging/gym_tiles.dart';
+import 'package:sva/src/logging/here.dart';
 import 'package:sva/src/logging/time_zone.dart';
 import 'package:sva/src/places/form_parts.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva_core/sva_core.dart'
-    show GradeSystem, GymRouteKey, GymSessionLog;
+    show GradeSystem, GymRouteKey, GymSessionLog, nearestWithin;
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
 
@@ -43,16 +44,34 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
   var _saving = false;
 
   /// The gym to log at: the one picked (or pinned by the first climb),
-  /// else the one logged at last, else the first set up.
-  String? _gym(List<Area> gyms) {
-    if (_gymId case final id? when gyms.any((g) => g.id == id)) return id;
+  /// else the one you are at, else the one logged at last, else the first
+  /// set up. `here` says it was found from your location; `waiting` that
+  /// the position is still coming, so the log does not open on one gym and
+  /// then jump to another.
+  ({String? id, bool here, bool waiting}) _choose(List<Area> gyms) {
+    if (_gymId case final id? when gyms.any((g) => g.id == id)) {
+      return (id: id, here: false, waiting: false);
+    }
+    // Location is asked for only when it could change which gym opens: more
+    // than one gym, and at least one with a location.
+    if (gyms.length > 1 &&
+        gyms.any((g) => g.latitude != null && g.longitude != null)) {
+      final here = ref.watch(hereProvider);
+      if (here.isLoading) return (id: null, here: false, waiting: true);
+      if (here.value case final p?) {
+        final nearest = nearestWithin(p.lat, p.lon, [
+          for (final g in gyms) (g.id, g.latitude, g.longitude),
+        ]);
+        if (nearest != null) return (id: nearest, here: true, waiting: false);
+      }
+    }
     final sessions = ref.watch(mySessionsProvider).value ?? const [];
     final last = sessions
         .where((s) => s.setting == 'indoor' && s.areaId != null)
         .map((s) => s.areaId)
         .firstOrNull;
-    if (gyms.any((g) => g.id == last)) return last;
-    return gyms.firstOrNull?.id;
+    final id = gyms.any((g) => g.id == last) ? last : gyms.firstOrNull?.id;
+    return (id: id, here: false, waiting: false);
   }
 
   void _tap(String gymId, String wallId, String kind, GymTile tile) {
@@ -161,7 +180,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     if (gymsValue.hasError) return message(l10n.logIndoorLoadFailed);
     final gyms = gymsValue.value;
     if (gyms == null) return const _Loading();
-    final gymId = _gym(gyms);
+    final (id: gymId, here: foundHere, :waiting) = _choose(gyms);
+    if (waiting) return const _Loading();
     if (gymId == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,7 +201,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     if (setup == null) return const _Loading();
 
     final kinds = [
-      for (final k in wallKinds)
+      for (final k in const ['boulder', 'rope'])
         if (setup.walls.any((w) => w.kind == k)) k,
     ];
     // What the screen shows is what a tap logs. Boulder first, as most
@@ -228,9 +248,10 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
               if (v.isNotEmpty) setState(() => _gymId = v.single);
             },
           ),
-          formGap,
         ] else
           Text(setup.gym.name, style: text.headline),
+        if (foundHere) Text(l10n.logIndoorFoundHere, style: muted),
+        formGap,
         if (kind == null || wall == null)
           message(l10n.logIndoorNoWalls)
         else ...[

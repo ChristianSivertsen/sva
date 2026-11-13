@@ -467,6 +467,7 @@
   "logIndoorNoGym": "Set up your gym first: its walls and colours.",
   "logIndoorNoWalls": "This gym has no walls yet. Add them in Settings, under Gyms.",
   "logIndoorGym": "Gym",
+  "logIndoorFoundHere": "Found from your location",
   "logIndoorWall": "Wall",
   "logIndoorTapHint": "Tap a colour each time you top it.",
   "logIndoorUngraded": "Climb",

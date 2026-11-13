@@ -772,6 +772,9 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorGym => 'Klatresenter';
 
   @override
+  String get logIndoorFoundHere => 'Funnet ut fra posisjonen din';
+
+  @override
   String get logIndoorWall => 'Vegg';
 
   @override

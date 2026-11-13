@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:drift/drift.dart';
 import 'package:sva_core/sva_core.dart';
 import 'package:sva_data/src/database/sva_database.dart';
@@ -441,14 +439,7 @@ class RouteRepository extends Repository<$RoutesTable, Route>
 /// Great-circle distance in km, or `null` when a point is missing.
 double? _distanceKm(LatLon? from, double? lat, double? lon) {
   if (from == null || lat == null || lon == null) return null;
-  const earthKm = 6371.0;
-  double rad(double deg) => deg * pi / 180;
-  final dLat = rad(lat - from.lat);
-  final dLon = rad(lon - from.lon);
-  final h =
-      pow(sin(dLat / 2), 2) +
-      cos(rad(from.lat)) * cos(rad(lat)) * pow(sin(dLon / 2), 2);
-  return 2 * earthKm * asin(sqrt(h));
+  return distanceKm(from.lat, from.lon, lat, lon);
 }
 
 /// A user's own walls in a gym; gyms themselves are shared areas.

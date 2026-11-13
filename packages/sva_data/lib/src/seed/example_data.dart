@@ -61,7 +61,7 @@ Future<void> seedExampleData(SvaDatabase db, {required String userId}) async {
       at: (lat: 64.49, lon: 10.80),
     );
     area('Hanshelleren', 'sector', parent: 'Flatanger');
-    area('Home gym, Oslo', 'gym');
+    area('Home gym, Oslo', 'gym', at: (lat: 59.9275, lon: 10.7590));
     // Its colours and walls, as in prototype/gym-log.html, so the gym log
     // can be tried straight away.
     final gym = exampleId('Home gym, Oslo');

@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Map tiles (Mapbox) and, later, sync and weather. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Approximate location only, to open the gym log on the gym you are
+         at. It is not stored or sent anywhere. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
         android:label="Sva"
         android:name="${applicationName}"

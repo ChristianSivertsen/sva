@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sva/src/app.dart';
 import 'package:sva/src/data/providers.dart';
 import 'package:sva/src/logging/gym_tiles.dart';
+import 'package:sva/src/logging/here.dart';
 import 'package:sva/src/shell/app_shell.dart';
 import 'package:sva/src/shell/log_sheet.dart';
 import 'package:sva_core/sva_core.dart' show AscentStyle, gradeSystems;
@@ -26,7 +27,7 @@ class _FakeLogger extends SessionLogger {
   }
 }
 
-Area _area(String id, String name) => Area(
+Area _area(String id, String name, {double? lat, double? lon}) => Area(
   id: id,
   createdAt: DateTime.utc(2026),
   updatedAt: DateTime.utc(2026),
@@ -35,6 +36,8 @@ Area _area(String id, String name) => Area(
   type: 'gym',
   name: name,
   countryCode: 'NO',
+  latitude: lat,
+  longitude: lon,
   locationHidden: false,
 );
 
@@ -86,6 +89,8 @@ void main() {
     String grading = 'colour',
     List<GymWall>? walls,
     List<GymColourGrade>? colours,
+    LatLon? here,
+    void Function()? onAskedWhere,
   }) async {
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 1;
@@ -96,6 +101,10 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         sessionLoggerProvider.overrideWithValue(logger),
+        hereProvider.overrideWith((ref) async {
+          onAskedWhere?.call();
+          return here;
+        }),
         lastSettingProvider.overrideWith((ref) async => 'indoor'),
         mySessionsProvider.overrideWith(
           (ref) => Stream.value([
@@ -278,5 +287,68 @@ void main() {
       findsOneWidget,
     );
     expect(inSheet(find.text('Add a gym')), findsOneWidget);
+  });
+
+  testWidgets('M3-4: the log opens on the gym you are at', (tester) async {
+    // Another gym is in Oslo; Gnisten, where you logged last, is in Alta.
+    final gyms = [
+      _area('g0', 'Another gym', lat: 59.9330, lon: 10.7660),
+      _area('g1', 'Gnisten', lat: 69.9689, lon: 23.2716),
+    ];
+    bool picked(String name) => tester
+        .widget<FilterChip>(inSheet(find.widgetWithText(FilterChip, name)))
+        .selected;
+
+    await open(tester, gyms: gyms, here: (lat: 59.9350, lon: 10.7700));
+    expect(picked('Another gym'), isTrue);
+    expect(inSheet(find.text('Found from your location')), findsOneWidget);
+  });
+
+  testWidgets('M3-4: away from every gym the log opens on your last gym', (
+    tester,
+  ) async {
+    final gyms = [
+      _area('g0', 'Another gym', lat: 59.9330, lon: 10.7660),
+      _area('g1', 'Gnisten', lat: 69.9689, lon: 23.2716),
+    ];
+    await open(tester, gyms: gyms, here: (lat: 63.43, lon: 10.39));
+    expect(
+      tester
+          .widget<FilterChip>(
+            inSheet(find.widgetWithText(FilterChip, 'Gnisten')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(inSheet(find.text('Found from your location')), findsNothing);
+  });
+
+  testWidgets('M3-4: a gym you pick wins over the one you are at', (
+    tester,
+  ) async {
+    final gyms = [
+      _area('g0', 'Another gym', lat: 59.9330, lon: 10.7660),
+      _area('g1', 'Gnisten', lat: 69.9689, lon: 23.2716),
+    ];
+    await open(tester, gyms: gyms, here: (lat: 59.9350, lon: 10.7700));
+    await tap(tester, inSheet(find.widgetWithText(FilterChip, 'Gnisten')));
+    expect(
+      tester
+          .widget<FilterChip>(
+            inSheet(find.widgetWithText(FilterChip, 'Gnisten')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(inSheet(find.text('Found from your location')), findsNothing);
+  });
+
+  testWidgets('M3-4: location is not asked for when it cannot help', (
+    tester,
+  ) async {
+    var asked = 0;
+    // One gym, or gyms without a location: nothing to choose between.
+    await open(tester, gyms: [_gym], onAskedWhere: () => asked++);
+    expect(asked, 0);
   });
 }
