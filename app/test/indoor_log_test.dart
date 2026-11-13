@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Route;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sva/src/app.dart';
@@ -26,6 +26,42 @@ class _FakeLogger extends SessionLogger {
     return 'session';
   }
 }
+
+/// Records the projects marked as gone. Retiring them is tested in
+/// sva_data.
+class _FakeRoutes extends GymRouteRepository {
+  new(super.db);
+
+  final gone = <String>[];
+
+  @override
+  Future<void> markGone(String routeId, {required String userId}) async =>
+      gone.add(routeId);
+}
+
+/// A blue in the cave, tried [tries] times on [lastTried].
+GymProject _project(
+  String id, {
+  int tries = 3,
+  String lastTried = '2026-11-05',
+}) => (
+  route: Route(
+    id: id,
+    createdAt: DateTime.utc(2026),
+    updatedAt: DateTime.utc(2026),
+    visibility: 'private',
+    areaId: 'g1',
+    kind: 'gym',
+    discipline: 'boulder',
+    pitchCount: 1,
+    status: 'open',
+    gymWallId: 'cave',
+    gymColourGradeId: 'blue',
+  ),
+  tries: tries,
+  lastTried: lastTried,
+  gradeId: null,
+);
 
 Area _area(String id, String name, {double? lat, double? lon}) => Area(
   id: id,
@@ -81,6 +117,7 @@ final List<GymColourGrade> _colours = [
 
 void main() {
   late _FakeLogger logger;
+  late _FakeRoutes routes;
 
   /// Opens the log with [gyms]; the last session was at Gnisten, whose
   /// setup is [grading], [walls] and [colours].
@@ -92,6 +129,7 @@ void main() {
     List<GymColourGrade>? colours,
     LatLon? here,
     void Function()? onAskedWhere,
+    List<GymProject> projects = const [],
   }) async {
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 1;
@@ -99,9 +137,17 @@ void main() {
     final db = SvaDatabase.inMemory();
     addTearDown(db.close);
     logger = _FakeLogger(db);
+    routes = _FakeRoutes(db);
     final container = ProviderContainer(
       overrides: [
         sessionLoggerProvider.overrideWithValue(logger),
+        gymRouteRepositoryProvider.overrideWithValue(routes),
+        gymProjectsProvider.overrideWith(
+          (ref, id) async => [
+            for (final p in projects)
+              if (!routes.gone.contains(p.route.id)) p,
+          ],
+        ),
         hereProvider.overrideWith((ref) async {
           onAskedWhere?.call();
           return here;
@@ -351,5 +397,54 @@ void main() {
     // One gym, or gyms without a location: nothing to choose between.
     await open(tester, gyms: [_gym], onAskedWhere: () => asked++);
     expect(asked, 0);
+  });
+
+  testWidgets('M3-7: a project you send, or a tap that was one, is saved '
+      'on that route with its tries', (tester) async {
+    await open(tester, projects: [_project('p1'), _project('p2', tries: 1)]);
+    expect(inSheet(find.text('Your projects here')), findsOneWidget);
+    expect(inSheet(find.text('3 tries · last 5 Nov 2026')), findsOneWidget);
+
+    // Sent the first one: tapped in "Your projects here".
+    // Both are blues in the cave; the first is the one tried most lately.
+    tester.semantics.tap(
+      find.semantics.byLabel('Sent your Blue project on Cave').first,
+    );
+    await tester.pumpAndSettle();
+    expect(inSheet(find.text('Redpoint')), findsWidgets);
+    expect(
+      inSheet(find.text('3 tries · last 5 Nov 2026')),
+      findsNothing,
+      reason: 'sent, so no longer a project',
+    );
+
+    // A blue in the cave tapped as a new one was the other project.
+    await tap(tester, tile('Blue'));
+    await tap(tester, inSheet(find.text('Your Blue project from 5 Nov 2026')));
+    await tap(tester, inSheet(find.text('Save session (2 climbs)')));
+
+    final saved = logger.saved!;
+    expect([for (final r in saved.routes) r.routeId], ['p1', 'p2']);
+    expect(
+      [for (final c in saved.climbs) (c.route, c.style, c.tries)],
+      [(0, AscentStyle.redpoint, 4), (1, AscentStyle.redpoint, 2)],
+    );
+  });
+
+  testWidgets('M3-7: a project marked as gone is no longer offered', (
+    tester,
+  ) async {
+    await open(tester, projects: [_project('p1')]);
+    await tester.tap(
+      find.bySemanticsLabel('Mark your Blue project on Cave as gone'),
+    );
+    await tester.pumpAndSettle();
+    expect(routes.gone, ['p1']);
+    expect(find.text('Blue on Cave is marked as gone.'), findsOneWidget);
+    expect(inSheet(find.text('Your projects here')), findsNothing);
+
+    // A blue in the cave is not asked about either.
+    await tap(tester, tile('Blue'));
+    expect(inSheet(find.text('Was it another climb?')), findsNothing);
   });
 }

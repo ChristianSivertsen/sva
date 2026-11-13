@@ -796,6 +796,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logIndoorTapHint => 'Tap a colour each time you top it.';
 
   @override
+  String get logIndoorProjects => 'Your projects here';
+
+  @override
+  String get logIndoorProjectsHint => 'Tap one when you send it.';
+
+  @override
+  String logIndoorProjectSub(int tries, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      tries,
+      locale: localeName,
+      other: '$tries tries',
+      one: '1 try',
+    );
+    return '$_temp0 · last $date';
+  }
+
+  @override
+  String logIndoorProjectSend(String colour, String wall) {
+    return 'Sent your $colour project on $wall';
+  }
+
+  @override
+  String get logIndoorProjectGone => 'Gone';
+
+  @override
+  String logIndoorProjectGoneLabel(String colour, String wall) {
+    return 'Mark your $colour project on $wall as gone';
+  }
+
+  @override
+  String logIndoorProjectGoneDone(String colour, String wall) {
+    return '$colour on $wall is marked as gone.';
+  }
+
+  @override
+  String get logIndoorProjectGoneFailed =>
+      'Couldn\'t mark it as gone. Try again.';
+
+  @override
+  String get logIndoorMatchAsk => 'Was it another climb?';
+
+  @override
+  String logIndoorMatchTried(String colour) {
+    return 'The $colour you tried today';
+  }
+
+  @override
+  String logIndoorMatchProject(String colour, String date) {
+    return 'Your $colour project from $date';
+  }
+
+  @override
+  String logIndoorMatchAgain(String colour) {
+    return 'Same $colour again';
+  }
+
+  @override
+  String logIndoorMatchDifferent(String colour) {
+    return 'A different $colour';
+  }
+
+  @override
   String get logIndoorUngraded => 'Climb';
 
   @override
