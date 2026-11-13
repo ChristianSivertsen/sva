@@ -105,13 +105,37 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
 
   /// Marks [project] as gone, so it is no longer offered.
   Future<void> _gone(
-    String gymId,
     GymPastRoute project, {
     required String colour,
     required String wall,
   }) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final colors = context.svaColors;
+    // You can't log on it afterwards, so ask first (docs/DESIGN.md,
+    // Destructive button).
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.logIndoorProjectGoneTitle(colour, wall)),
+        content: Text(l10n.logIndoorProjectGoneBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.logIndoorProjectGoneCancel),
+          ),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colors.danger,
+              side: BorderSide(color: colors.danger),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.logIndoorProjectGoneConfirm),
+          ),
+        ],
+      ),
+    );
+    if (sure != true || !mounted) return;
     try {
       await ref
           .read(gymRouteRepositoryProvider)
@@ -124,7 +148,6 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     }
     if (!mounted) return;
     setState(() => _log = _log.withoutProject(project.id));
-    ref.invalidate(gymProjectsProvider(gymId));
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.logIndoorProjectGoneDone(colour, wall))),
     );
@@ -268,7 +291,9 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     if (setup == null) return const _Loading();
     // Without its projects the log still works, as for a new gym.
     final projectsValue = ref.watch(gymProjectsProvider(gymId));
-    if (projectsValue.isLoading) return const _Loading();
+    if (projectsValue.isLoading && !projectsValue.hasValue) {
+      return const _Loading();
+    }
     if (_logGym != gymId && _log.entries.isEmpty) {
       _logGym = gymId;
       _log = GymSessionLog(
@@ -294,7 +319,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     final wall =
         walls.where((w) => w.id == _wall[kind]).firstOrNull ??
         walls.firstOrNull;
-    List<GymTile> tilesFor(String kind) => gymTiles(
+    final tilesByKind = <String, List<GymTile>>{};
+    List<GymTile> tilesFor(String kind) => tilesByKind[kind] ??= gymTiles(
       setup,
       system: _system(kind),
       ungraded: l10n.logIndoorUngraded,
@@ -308,8 +334,14 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     GymTile? tileOf(GymRouteKey key) => tilesFor(key.kind)
         .where((t) => t.colourId == key.colourId && t.gradeId == key.gradeId)
         .firstOrNull;
+    // A grade outside the grade system in settings, say after changing
+    // it, has no tile; it shows as a climb, and taps can't match it.
     String labelOf(GymRouteKey key) =>
         tileOf(key)?.label ?? l10n.logIndoorUngraded;
+    // Inside a sentence a colour is lowercase ("the blue you tried"); a
+    // grade such as 6A stays as it is.
+    String inSentence(GymRouteKey key) =>
+        key.colourId == null ? labelOf(key) : labelOf(key).toLowerCase();
     final projects = kind == null
         ? const <({GymPastRoute route, int tries})>[]
         : _log.projects(kind);
@@ -398,7 +430,6 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                 onGone: _log.routeIds.contains(route.id)
                     ? null
                     : () => _gone(
-                        gymId,
                         route,
                         colour: labelOf(route.key),
                         wall: wallName(route.key.wallId) ?? '',
@@ -436,7 +467,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
               matches: _matches(
                 l10n,
                 entries.length - 1,
-                labelOf(_log.routes[entries.last.route]),
+                inSentence(_log.routes[entries.last.route]),
               ),
               onUndo: () => _remove(entries.length - 1),
               onTopped: (t) => _update(entries.length - 1, topped: t),

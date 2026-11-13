@@ -826,6 +826,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String logIndoorProjectGoneTitle(String colour, String wall) {
+    return 'Mark $colour on $wall as gone?';
+  }
+
+  @override
+  String get logIndoorProjectGoneBody =>
+      'It\'s no longer suggested, and you can\'t log on it again. Your climbs on it stay in your log.';
+
+  @override
+  String get logIndoorProjectGoneCancel => 'Not now';
+
+  @override
+  String get logIndoorProjectGoneConfirm => 'Mark as gone';
+
+  @override
   String logIndoorProjectGoneDone(String colour, String wall) {
     return '$colour on $wall is marked as gone.';
   }

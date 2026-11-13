@@ -420,31 +420,65 @@ void main() {
 
     // A blue in the cave tapped as a new one was the other project.
     await tap(tester, tile('Blue'));
-    await tap(tester, inSheet(find.text('Your Blue project from 5 Nov 2026')));
+    await tap(tester, inSheet(find.text('Your blue project from 5 Nov 2026')));
     await tap(tester, inSheet(find.text('Save session (2 climbs)')));
 
+    // Which style each climb gets is sva_core's; here, that each lands on
+    // its project's route.
     final saved = logger.saved!;
     expect([for (final r in saved.routes) r.routeId], ['p1', 'p2']);
-    expect(
-      [for (final c in saved.climbs) (c.route, c.style, c.tries)],
-      [(0, AscentStyle.redpoint, 4), (1, AscentStyle.redpoint, 2)],
-    );
+    expect([for (final c in saved.climbs) c.route], [0, 1]);
+  });
+
+  testWidgets('M3-7: after a tap the card offers the climbs it might be', (
+    tester,
+  ) async {
+    await open(tester);
+    // A second blue after a send could be the same one again.
+    await tap(tester, tile('Blue'));
+    await tap(tester, tile('Blue'));
+    expect(inSheet(find.text('Was it another climb?')), findsOneWidget);
+    await tap(tester, inSheet(find.text('Same blue again')));
+    expect(inSheet(find.text('Repeat')), findsWidgets);
+
+    // Once matched, it can be a different blue after all, and then the
+    // blue tried today is offered.
+    await tap(tester, inSheet(find.text('A different blue')));
+    await tap(tester, inSheet(find.text("Didn't top")));
+    await tap(tester, tile('Green'));
+    await tap(tester, tile('Blue'));
+    await tap(tester, inSheet(find.text('A different blue')));
+    expect(inSheet(find.text('The blue you tried today')), findsOneWidget);
   });
 
   testWidgets('M3-7: a project marked as gone is no longer offered', (
     tester,
   ) async {
-    await open(tester, projects: [_project('p1')]);
-    await tester.tap(
-      find.bySemanticsLabel('Mark your Blue project on Cave as gone'),
+    await open(tester, projects: [_project('p1'), _project('p2')]);
+    final gone = find.bySemanticsLabel(
+      'Mark your Blue project on Cave as gone',
     );
+    // It asks first, as you can't log on it afterwards.
+    await tester.tap(gone.first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+    expect(routes.gone, isEmpty);
+    await tester.tap(gone.first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark as gone'));
     await tester.pumpAndSettle();
     expect(routes.gone, ['p1']);
     expect(find.text('Blue on Cave is marked as gone.'), findsOneWidget);
-    expect(inSheet(find.text('Your projects here')), findsNothing);
+    expect(gone, findsOneWidget, reason: 'only the other one is left');
 
-    // A blue in the cave is not asked about either.
-    await tap(tester, tile('Blue'));
-    expect(inSheet(find.text('Was it another climb?')), findsNothing);
+    // One climbed in this session can't be gone: the session is saved on it.
+    tester.semantics.tap(
+      find.semantics.byLabel('Sent your Blue project on Cave'),
+    );
+    await tester.pumpAndSettle();
+    await tap(tester, inSheet(find.text("Didn't top")));
+    expect(inSheet(find.text('Your projects here')), findsOneWidget);
+    expect(gone, findsNothing);
   });
 }

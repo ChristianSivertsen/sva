@@ -147,6 +147,31 @@ void main() {
     );
   });
 
+  test('M3-7: moving a climb drops the route it leaves and keeps the rest '
+      'in line', () {
+    // Sent a blue, then fell on a blue: the send was on that one after all.
+    var log = const GymSessionLog()
+        .tap(caveBlue)
+        .tap(caveBlue)
+        .update(1, topped: false);
+    expect(log.routes, [caveBlue, caveBlue]);
+    const tried = (kind: GymMatchKind.triedToday, route: 1, pastId: null);
+    expect(log.matches(0), [tried]);
+    log = log.moveTo(0, tried);
+    expect(log.routes, [caveBlue]);
+    expect([for (final e in log.entries) e.route], [0, 0]);
+
+    // A project after a dropped route keeps its id.
+    log = const GymSessionLog(past: [project])
+        .tap(caveGreen)
+        .sendProject('r1')
+        .remove(0);
+    expect(log.routes, [caveBlue]);
+    expect(log.routeIds, ['r1']);
+    expect(log.entries.single.route, 0);
+    expect(log.climbs.single, (style: AscentStyle.redpoint, tries: 4));
+  });
+
   test('M3-7: a project marked as gone leaves the log', () {
     final log = const GymSessionLog(past: [project]).withoutProject('r1');
     expect(log.projects('boulder'), isEmpty);

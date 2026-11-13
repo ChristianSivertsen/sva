@@ -828,6 +828,21 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String logIndoorProjectGoneTitle(String colour, String wall) {
+    return 'Merke $colour på $wall som borte?';
+  }
+
+  @override
+  String get logIndoorProjectGoneBody =>
+      'Den foreslås ikke lenger, og du kan ikke logge på den igjen. Klatringene dine på den blir værende i loggen.';
+
+  @override
+  String get logIndoorProjectGoneCancel => 'Ikke nå';
+
+  @override
+  String get logIndoorProjectGoneConfirm => 'Merk som borte';
+
+  @override
   String logIndoorProjectGoneDone(String colour, String wall) {
     return '$colour på $wall er merket som borte.';
   }

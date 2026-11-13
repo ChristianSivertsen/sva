@@ -524,6 +524,20 @@
   },
   "logIndoorProjectGone": "Gone",
   "logIndoorProjectGoneLabel": "Mark your {colour} project on {wall} as gone",
+  "logIndoorProjectGoneTitle": "Mark {colour} on {wall} as gone?",
+  "@logIndoorProjectGoneTitle": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorProjectGoneBody": "It's no longer suggested, and you can't log on it again. Your climbs on it stay in your log.",
+  "logIndoorProjectGoneCancel": "Not now",
+  "logIndoorProjectGoneConfirm": "Mark as gone",
   "@logIndoorProjectGoneLabel": {
     "placeholders": {
       "colour": {

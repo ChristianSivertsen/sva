@@ -250,11 +250,16 @@ class GymRouteRepository {
       final last = await (db.select(
         db.sessions,
       )..where((s) => s.id.equals(entries.last.sessionId))).getSingle();
+      // The route's own grade, not a pitch's; a gym route has one.
       final grade =
-          await (db.select(db.routeGrades)..where(
-                (g) => g.routeId.equals(route.id) & g.deletedAt.isNull(),
-              ))
-              .getSingleOrNull();
+          (await (db.select(db.routeGrades)..where(
+                    (g) =>
+                        g.routeId.equals(route.id) &
+                        g.pitchId.isNull() &
+                        g.deletedAt.isNull(),
+                  ))
+                  .get())
+              .firstOrNull;
       projects.add((
         route: route,
         tries: history.earlierTries,

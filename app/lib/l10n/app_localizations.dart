@@ -1172,6 +1172,30 @@ abstract class AppLocalizations {
   /// **'Mark your {colour} project on {wall} as gone'**
   String logIndoorProjectGoneLabel(String colour, String wall);
 
+  /// No description provided for @logIndoorProjectGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark {colour} on {wall} as gone?'**
+  String logIndoorProjectGoneTitle(String colour, String wall);
+
+  /// No description provided for @logIndoorProjectGoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s no longer suggested, and you can\'t log on it again. Your climbs on it stay in your log.'**
+  String get logIndoorProjectGoneBody;
+
+  /// No description provided for @logIndoorProjectGoneCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get logIndoorProjectGoneCancel;
+
+  /// No description provided for @logIndoorProjectGoneConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as gone'**
+  String get logIndoorProjectGoneConfirm;
+
   /// No description provided for @logIndoorProjectGoneDone.
   ///
   /// In en, this message translates to:
