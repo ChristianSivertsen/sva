@@ -798,6 +798,83 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorTapHint => 'Trykk på en farge hver gang du toppet den.';
 
   @override
+  String get logIndoorProjects => 'Prosjektene dine her';
+
+  @override
+  String get logIndoorProjectsHint => 'Trykk på et når du klarer det.';
+
+  @override
+  String logIndoorProjectSub(int tries, String date) {
+    String _temp0 = intl.Intl.pluralLogic(
+      tries,
+      locale: localeName,
+      other: '$tries forsøk',
+      one: '1 forsøk',
+    );
+    return '$_temp0 · sist $date';
+  }
+
+  @override
+  String logIndoorProjectSend(String colour, String wall) {
+    return 'Klarte prosjektet ditt, $colour på $wall';
+  }
+
+  @override
+  String get logIndoorProjectGone => 'Borte';
+
+  @override
+  String logIndoorProjectGoneLabel(String colour, String wall) {
+    return 'Merk prosjektet ditt, $colour på $wall, som borte';
+  }
+
+  @override
+  String logIndoorProjectGoneTitle(String colour, String wall) {
+    return 'Merke $colour på $wall som borte?';
+  }
+
+  @override
+  String get logIndoorProjectGoneBody =>
+      'Den foreslås ikke lenger, og du kan ikke logge på den igjen. Klatringene dine på den blir værende i loggen.';
+
+  @override
+  String get logIndoorProjectGoneCancel => 'Ikke nå';
+
+  @override
+  String get logIndoorProjectGoneConfirm => 'Merk som borte';
+
+  @override
+  String logIndoorProjectGoneDone(String colour, String wall) {
+    return '$colour på $wall er merket som borte.';
+  }
+
+  @override
+  String get logIndoorProjectGoneFailed =>
+      'Kunne ikke merke det som borte. Prøv igjen.';
+
+  @override
+  String get logIndoorMatchAsk => 'Var det en annen rute?';
+
+  @override
+  String logIndoorMatchTried(String colour) {
+    return '$colour du prøvde i dag';
+  }
+
+  @override
+  String logIndoorMatchProject(String colour, String date) {
+    return 'Prosjektet ditt, $colour, fra $date';
+  }
+
+  @override
+  String logIndoorMatchAgain(String colour) {
+    return 'Samme $colour igjen';
+  }
+
+  @override
+  String logIndoorMatchDifferent(String colour) {
+    return 'En annen $colour';
+  }
+
+  @override
   String get logIndoorUngraded => 'Klatring';
 
   @override

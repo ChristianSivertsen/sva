@@ -498,6 +498,104 @@
   "logIndoorFoundHere": "Found from your location",
   "logIndoorWall": "Wall",
   "logIndoorTapHint": "Tap a colour each time you top it.",
+  "logIndoorProjects": "Your projects here",
+  "logIndoorProjectsHint": "Tap one when you send it.",
+  "logIndoorProjectSub": "{tries, plural, =1{1 try} other{{tries} tries}} · last {date}",
+  "@logIndoorProjectSub": {
+    "placeholders": {
+      "tries": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorProjectSend": "Sent your {colour} project on {wall}",
+  "@logIndoorProjectSend": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorProjectGone": "Gone",
+  "logIndoorProjectGoneLabel": "Mark your {colour} project on {wall} as gone",
+  "logIndoorProjectGoneTitle": "Mark {colour} on {wall} as gone?",
+  "@logIndoorProjectGoneTitle": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorProjectGoneBody": "It's no longer suggested, and you can't log on it again. Your climbs on it stay in your log.",
+  "logIndoorProjectGoneCancel": "Not now",
+  "logIndoorProjectGoneConfirm": "Mark as gone",
+  "@logIndoorProjectGoneLabel": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorProjectGoneDone": "{colour} on {wall} is marked as gone.",
+  "@logIndoorProjectGoneDone": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorProjectGoneFailed": "Couldn't mark it as gone. Try again.",
+  "logIndoorMatchAsk": "Was it another climb?",
+  "logIndoorMatchTried": "The {colour} you tried today",
+  "@logIndoorMatchTried": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorMatchProject": "Your {colour} project from {date}",
+  "@logIndoorMatchProject": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorMatchAgain": "Same {colour} again",
+  "@logIndoorMatchAgain": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorMatchDifferent": "A different {colour}",
+  "@logIndoorMatchDifferent": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      }
+    }
+  },
   "logIndoorUngraded": "Climb",
   "logIndoorTopped": "Topped {colour}, {kind}",
   "@logIndoorTopped": {

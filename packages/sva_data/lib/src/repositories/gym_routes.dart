@@ -39,9 +39,14 @@ final class NewGymRoute {
   final String? note;
 }
 
-/// A gym route the user has tried and not sent: how many tries so far and
-/// the day of the latest one.
-typedef GymProject = ({Route route, int tries, String lastTried});
+/// A gym route the user has tried and not sent: how many tries so far, the
+/// day of the latest one, and its grade at a gym with standard grades.
+typedef GymProject = ({
+  Route route,
+  int tries,
+  String lastTried,
+  String? gradeId,
+});
 
 /// How a gym route is shown, since it has no name: its colour (or its
 /// grade, with the grade's system) and its wall. All `null` parts are
@@ -245,10 +250,21 @@ class GymRouteRepository {
       final last = await (db.select(
         db.sessions,
       )..where((s) => s.id.equals(entries.last.sessionId))).getSingle();
+      // The route's own grade, not a pitch's; a gym route has one.
+      final grade =
+          (await (db.select(db.routeGrades)..where(
+                    (g) =>
+                        g.routeId.equals(route.id) &
+                        g.pitchId.isNull() &
+                        g.deletedAt.isNull(),
+                  ))
+                  .get())
+              .firstOrNull;
       projects.add((
         route: route,
         tries: history.earlierTries,
         lastTried: last.localDate,
+        gradeId: grade?.gradeId,
       ));
     }
     return projects..sort((a, b) => b.lastTried.compareTo(a.lastTried));
