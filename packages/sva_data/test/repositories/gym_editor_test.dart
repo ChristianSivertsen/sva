@@ -162,6 +162,54 @@ void main() {
     },
   );
 
+  test('M3-6: a wall can be saved with or without degrees', () async {
+    final id = await gyms.addGym(
+      const NewGym(name: 'Klatreverket', countryCode: 'NO', grading: 'none'),
+      walls: const [
+        // Degrees decide the angle, whatever the angle type says.
+        WallDraft(
+          name: 'Cave',
+          kind: 'boulder',
+          angle: 'angle.vertical',
+          angleDeg: 30,
+        ),
+        WallDraft(name: 'Slab', kind: 'rope', angleDeg: -10),
+        WallDraft(name: 'Main wall', kind: 'rope', angle: 'angle.vertical'),
+      ],
+      userId: 'me',
+    );
+    var walls = (await gyms.setup(id, userId: 'me'))!.walls;
+    expect(walls.map((w) => (w.name, w.angle, w.angleDeg)), [
+      ('Cave', 'angle.overhang', 30),
+      ('Slab', 'angle.slab', -10),
+      ('Main wall', 'angle.vertical', null),
+    ]);
+
+    // Clearing the degrees keeps the angle type the form sends.
+    final [cave, slab, main] = walls;
+    await gyms.saveOwn(
+      id,
+      walls: [
+        WallDraft(
+          id: cave.id,
+          name: 'Cave',
+          kind: 'boulder',
+          angle: 'angle.overhang',
+        ),
+        WallDraft(id: slab.id, name: 'Slab', kind: 'rope', angleDeg: 70),
+        WallDraft(id: main.id, name: 'Main wall', kind: 'rope'),
+      ],
+      colours: const [],
+      userId: 'me',
+    );
+    walls = (await gyms.setup(id, userId: 'me'))!.walls;
+    expect(walls.map((w) => (w.angle, w.angleDeg)), [
+      ('angle.overhang', null),
+      ('angle.roof', 70),
+      (null, null),
+    ]);
+  });
+
   test("M3-1: walls on a shared gym are the user's own to change", () async {
     final id = await gyms.addGym(
       const NewGym(name: 'Klatreverket', countryCode: 'NO', grading: 'colour'),
@@ -227,6 +275,13 @@ void main() {
         () => save([WallDraft(name: 'W', kind: 'rope', heightM: height)]),
         throwsArgumentError,
         reason: '$height m',
+      );
+    }
+    for (final deg in [-46, 91]) {
+      expect(
+        () => save([WallDraft(name: 'W', kind: 'rope', angleDeg: deg)]),
+        throwsArgumentError,
+        reason: '$deg°',
       );
     }
     expect(

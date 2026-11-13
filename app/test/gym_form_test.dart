@@ -308,6 +308,78 @@ void main() {
     expect(gyms.walls!.single.name, 'Wall 1');
   });
 
+  testWidgets('M3-6: the wall editor sets the angle from degrees', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      existing: (
+        gym: _gym(),
+        grading: 'colour',
+        walls: [
+          _wall('w1', 'Cave', 'boulder', 4.5).copyWith(
+            angle: const Value('angle.overhang'),
+            angleDeg: const Value(30),
+          ),
+          _wall('w2', 'Main wall', 'rope', 14),
+        ],
+        colours: const <GymColourGrade>[],
+      ),
+    );
+    Finder card(String wall) =>
+        find.ancestor(of: field(wall), matching: find.byType(Card));
+    Finder degrees(String wall) => find.descendant(
+      of: card(wall),
+      matching: field('Degrees past vertical'),
+    );
+    expect(
+      tester.widget<TextFormField>(degrees('Cave')).controller!.text,
+      '30',
+      reason: 'saved degrees load',
+    );
+
+    // Typing degrees picks the angle; picking another angle clears them.
+    await tester.enterText(degrees('Main wall'), '-10');
+    await tester.pumpAndSettle();
+    final roof = find.descendant(of: card('Cave'), matching: find.text('Roof'));
+    await tester.ensureVisible(roof);
+    await tester.tap(roof);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save gym'));
+    await tester.pumpAndSettle();
+    expect(gyms.walls!.map((w) => (w.name, w.angle, w.angleDeg)), [
+      ('Cave', 'angle.roof', null),
+      ('Main wall', 'angle.slab', -10),
+    ]);
+  });
+
+  testWidgets('M3-6: degrees outside -45 to 90 are rejected', (tester) async {
+    await open(tester);
+    await tester.tap(find.text('Add a gym'));
+    await tester.pumpAndSettle();
+    await tester.enterText(field('Name'), 'Klatreverket');
+    final degrees = field('Degrees past vertical');
+    Future<void> save(String first, String second) async {
+      await tester.enterText(degrees.first, first);
+      await tester.enterText(degrees.last, second);
+      await tester.tap(find.text('Save gym'));
+      await tester.pumpAndSettle();
+    }
+
+    const error = 'Use whole degrees from -45 to 90, or leave it empty.';
+    await save('-46', '91');
+    expect(find.text(error), findsNWidgets(2));
+    await save('12.5', 'steep');
+    expect(find.text(error), findsNWidgets(2));
+    expect(gyms.called, isNull, reason: 'nothing saved');
+
+    await save('-45', '90');
+    expect(gyms.walls!.map((w) => (w.angle, w.angleDeg)), [
+      ('angle.slab', -45),
+      ('angle.roof', 90),
+    ]);
+  });
+
   testWidgets('M3-1: a gym that cannot be saved says so', (tester) async {
     await open(tester, fail: true);
     await tester.tap(find.text('Add a gym'));

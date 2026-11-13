@@ -127,7 +127,7 @@ A request about a row is handled by the moderators of the nearest crag or gym ab
 | grading | text | `colour`, `standard`, `none` |
 | route_expiry_weeks | integer | Not used: gym routes have no timer (PLAN.md decision 4). Kept until a later schema change drops it |
 
-**gym_walls**: personal for now, like gym routes. `id`, `owner_id`, `gym_id` → areas, `name`, `height_m`, `angle` (`angle.slab`, `angle.vertical`, `angle.overhang`, `angle.roof`), `kind` (`rope`, `boulder`), `last_reset_on` (date; marking a reset retires the open gym routes on the wall), `sort`. Marking a gym route as gone and resetting a wall are personal while gym routes are private. If gym routes become shared, both need a per-user marker or a moderator step instead of setting a shared route's `status`, and a server version of the reset.
+**gym_walls**: personal for now, like gym routes. `id`, `owner_id`, `gym_id` → areas, `name`, `height_m`, `angle` (`angle.slab`, `angle.vertical`, `angle.overhang`, `angle.roof`), `angle_deg` (optional integer, degrees past vertical, negative for slabs, from -45 to 90; when set, `angle` follows from it: slab below 0°, vertical 0–5°, overhang 6–60°, roof above 60°), `kind` (`rope`, `boulder`), `last_reset_on` (date; marking a reset retires the open gym routes on the wall), `sort`. Marking a gym route as gone and resetting a wall are personal while gym routes are private. If gym routes become shared, both need a per-user marker or a moderator step instead of setting a shared route's `status`, and a server version of the reset.
 
 **gym_colour_grades**: one row per colour, easiest first. Personal for now, like gym walls.
 

@@ -202,6 +202,34 @@
     }
   },
   "gymFormWallAngle": "Angle",
+  "gymFormWallDegrees": "Degrees past vertical",
+  "@gymFormWallDegrees": {
+    "description": "Optional field for a wall's exact angle."
+  },
+  "gymFormWallDegreesHelp": "Optional. Negative for slabs. Sets the angle for you.",
+  "gymFormWallDegreesInvalid": "Use whole degrees from {min} to {max}, or leave it empty.",
+  "@gymFormWallDegreesInvalid": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "wallAngleDegrees": "{angle} {degrees}°",
+  "@wallAngleDegrees": {
+    "description": "A wall's angle type with its degrees, such as 'Overhang 30°'.",
+    "placeholders": {
+      "angle": {
+        "type": "String"
+      },
+      "degrees": {
+        "type": "int"
+      }
+    }
+  },
   "gymFormWallRemove": "Remove {name}",
   "@gymFormWallRemove": {
     "placeholders": {

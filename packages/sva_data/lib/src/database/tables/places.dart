@@ -42,6 +42,10 @@ class GymWalls extends Table with SyncedRow, OwnedRow {
   RealColumn get heightM => real().nullable()();
   TextColumn get angle => text().nullable()();
 
+  /// Degrees past vertical, negative for slabs (M3-6). When set, [angle]
+  /// follows from it.
+  IntColumn get angleDeg => integer().nullable()();
+
   /// `rope` or `boulder`.
   TextColumn get kind => text()();
 

@@ -70,7 +70,8 @@ GymColourGrade _colour(String id, String name, String hex, int sort) =>
 
 final List<GymWall> _walls = [
   _wall('cave', 'Cave', 'boulder', 0),
-  _wall('board', 'Board', 'boulder', 1),
+  // Boards have a known angle.
+  _wall('board', 'Board', 'boulder', 1).copyWith(angleDeg: const Value(40)),
   _wall('main', 'Main wall', 'rope', 2),
 ];
 final List<GymColourGrade> _colours = [
@@ -198,7 +199,7 @@ void main() {
     // A green on the board, then undone.
     await tap(
       tester,
-      inSheet(find.widgetWithText(FilterChip, 'Board · 4.5 m · Overhang')),
+      inSheet(find.widgetWithText(FilterChip, 'Board · 4.5 m · Overhang 40°')),
     );
     await tap(tester, tile('Green'));
     await tap(tester, inSheet(find.text('Undo')));

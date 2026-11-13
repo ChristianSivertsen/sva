@@ -82,6 +82,26 @@ void main() {
     await db.close();
   });
 
+  test('M3-6: walls from before degrees keep working without them', () async {
+    final verifier = SchemaVerifier(GeneratedHelper());
+    final schema = await verifier.schemaAt(3);
+    schema.rawDatabase.execute(
+      'INSERT INTO gym_walls (id, created_at, updated_at, owner_id, gym_id, '
+      'name, angle, kind, sort) '
+      "VALUES ('w', '2026-11-01T10:00:00Z', '2026-11-01T10:00:00Z', 'me', "
+      "'g', 'Cave', 'angle.overhang', "
+      "'boulder', 0)",
+    );
+    final db = SvaDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(db, 4);
+    final wall = await db.select(db.gymWalls).getSingle();
+    expect(
+      (wall.name, wall.angle, wall.angleDeg),
+      ('Cave', 'angle.overhang', null),
+    );
+    await db.close();
+  });
+
   test(
     'M1-1: migration from every earlier version to the latest works',
     () async {
