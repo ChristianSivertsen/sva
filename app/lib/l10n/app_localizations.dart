@@ -551,8 +551,8 @@ abstract class AppLocalizations {
   /// No description provided for @gymFormWallDegreesInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Use whole degrees from -45 to 90, or leave it empty.'**
-  String get gymFormWallDegreesInvalid;
+  /// **'Use whole degrees from {min} to {max}, or leave it empty.'**
+  String gymFormWallDegreesInvalid(int min, int max);
 
   /// A wall's angle type with its degrees, such as 'Overhang 30°'.
   ///

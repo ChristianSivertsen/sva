@@ -279,13 +279,11 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                       if (w.heightM case final h?)
                         '${number.format(h)} ${l10n.feedStatMetres}',
                       if (w.angle case final a?)
-                        switch (w.angleDeg) {
-                          final deg? => l10n.wallAngleDegrees(
-                            l10n.attributeValue(a.replaceAll('.', '_')),
-                            deg,
-                          ),
-                          null => l10n.attributeValue(a.replaceAll('.', '_')),
-                        },
+                        _angleLabel(
+                          l10n,
+                          l10n.attributeValue(a.replaceAll('.', '_')),
+                          w.angleDeg,
+                        ),
                     ].join(' · '),
                   ),
               ],
@@ -383,3 +381,7 @@ class _Loading extends StatelessWidget {
     child: Center(child: CircularProgressIndicator()),
   );
 }
+
+/// A wall's angle type, with its degrees when they are known.
+String _angleLabel(AppLocalizations l10n, String angle, int? deg) =>
+    deg == null ? angle : l10n.wallAngleDegrees(angle, deg);

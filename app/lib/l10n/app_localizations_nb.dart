@@ -328,8 +328,9 @@ class AppLocalizationsNb extends AppLocalizations {
       'Valgfritt. Negativt for plater. Setter vinkelen for deg.';
 
   @override
-  String get gymFormWallDegreesInvalid =>
-      'Bruk hele grader fra -45 til 90, eller la feltet stå tomt.';
+  String gymFormWallDegreesInvalid(int min, int max) {
+    return 'Bruk hele grader fra $min til $max, eller la feltet stå tomt.';
+  }
 
   @override
   String wallAngleDegrees(String angle, int degrees) {

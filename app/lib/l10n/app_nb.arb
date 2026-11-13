@@ -75,7 +75,7 @@
   "gymFormWallAngle": "Vinkel",
   "gymFormWallDegrees": "Grader forbi loddrett",
   "gymFormWallDegreesHelp": "Valgfritt. Negativt for plater. Setter vinkelen for deg.",
-  "gymFormWallDegreesInvalid": "Bruk hele grader fra -45 til 90, eller la feltet stå tomt.",
+  "gymFormWallDegreesInvalid": "Bruk hele grader fra {min} til {max}, eller la feltet stå tomt.",
   "wallAngleDegrees": "{angle} {degrees}°",
   "gymFormWallRemove": "Fjern {name}",
   "gymFormWallDefaultRope": "Hovedvegg",

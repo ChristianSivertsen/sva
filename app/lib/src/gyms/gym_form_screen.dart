@@ -11,7 +11,8 @@ import 'package:sva/src/gyms/colour_scale_editor.dart';
 import 'package:sva/src/places/form_parts.dart';
 import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/places/location_picker.dart';
-import 'package:sva_core/sva_core.dart' show angleForDegrees, isWallAngleDeg;
+import 'package:sva_core/sva_core.dart'
+    show angleForDegrees, isWallAngleDeg, maxWallAngleDeg, minWallAngleDeg;
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
 
@@ -587,7 +588,10 @@ class _WallCard extends StatelessWidget {
                 if ((v ?? '').trim().isEmpty) return null;
                 final d = _degrees(v!);
                 return d == null || !isWallAngleDeg(d)
-                    ? l10n.gymFormWallDegreesInvalid
+                    ? l10n.gymFormWallDegreesInvalid(
+                        minWallAngleDeg,
+                        maxWallAngleDeg,
+                      )
                     : null;
               },
             ),
