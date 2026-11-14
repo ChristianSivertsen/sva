@@ -130,6 +130,10 @@ textarea.input{resize:vertical;min-height:64px}
 .strip .qrow{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:8px}
 .strip .seg button{min-height:32px;padding:5px 4px;font-size:12px}
 .strip .done.try{color:var(--muted)}
+.ask{background:var(--sunk);border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
+.ask b{font-weight:600;font-size:14px}
+.ask small{display:block;color:var(--muted);font-size:12px}
+.ask .chip:not(.on){background:var(--surface);border-color:var(--line)}
 .strip .done{white-space:nowrap;font-size:13px;font-weight:600;color:var(--good);display:inline-flex;align-items:center;gap:4px}
 .tile .more{position:absolute;top:4px;right:4px;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:inherit;display:grid;place-items:center;opacity:.8}
 .tile .more:hover{background:rgba(127,127,127,.2)}
@@ -185,12 +189,17 @@ const COLOURS=[
   {n:'Red',hex:'#D33A2C',b:[6,8],r:[8,10]},
   {n:'Black',hex:'#1E1E1E',b:[8,11],r:[10,13]}];
 const WALLS=[
-  {id:'cave',name:'Cave',height:4.5,angle:'Overhang',kind:'boulder'},
-  {id:'board',name:'Board',height:3.5,angle:'Overhang',kind:'boulder'},
-  {id:'slabb',name:'Slab corner',height:4,angle:'Slab',kind:'boulder'},
-  {id:'main',name:'Main wall',height:15,angle:'Vertical',kind:'rope'},
-  {id:'slab',name:'Slab wall',height:12,angle:'Slab',kind:'rope'}];
-const ANGLES=['Slab','Vertical','Overhang','Roof'];
+  {id:'cave',name:'Cave',height:4.5,angle:'overhang',deg:30,kind:'boulder'},
+  {id:'board',name:'Board',height:3.5,angle:'overhang',deg:40,kind:'boulder'},
+  {id:'slabb',name:'Slab corner',height:4,angle:'slab',kind:'boulder'},
+  {id:'main',name:'Main wall',height:15,angle:'vertical',kind:'rope'},
+  {id:'slab',name:'Slab wall',height:12,angle:'slab',kind:'rope'}];
+// Wall angle in degrees past vertical, grouped in four types (stable keys, as angle.overhang in the schema).
+// A wall may also have its exact angle in degrees (deg), set once when the gym is described. Climbs only ever pick the type;
+// stats can split overhangs by the wall's degrees where they are known.
+// The card uses the short label; details use the long one with the rough range.
+const ANGLES=[['slab','Slab','Slab','below 0°'],['vertical','Vertical','Vertical','0–5°'],['overhang','Overhang','Overhang','5–60°'],['roof','Roof','Roof','60–90°']];
+const angleName=k=>ANGLES.find(a=>a[0]===k)[2].toLowerCase();
 const HOLDS=['Crimps','Slopers','Pinches','Jugs','Pockets','Volumes'];
 const MOVES=['Powerful','Technical','Balance','Coordination','Dyno','Compression'];
 const ROPETYPES=[['lead','Lead'],['toprope','Top-rope']];
@@ -204,18 +213,25 @@ const FRENCH_ROPE=FRENCH;
 const ELITE={boulder:['V11','V12','V13','V14','V15','V16','V17'],rope:['8a+','8b','8b+','8c','8c+','9a','9a+','9b','9b+','9c']};
 let showElite=false;
 // history: climbs per colour or grade in your last few months at this gym. The row opens on the three you climb most.
-// seed: gym routes from earlier sessions. Open projects are the ones with tries and no send that have not expired.
+// seed: gym routes from earlier sessions. Open projects are the ones with tries and no send that have not expired;
+// sent ones are offered when you climb that colour on that wall again, so a repeat is not logged as a new flash.
 const GYMS={
   home:{name:'Gnisten, Alta',grading:'colour',history:{boulder:[40,55,30,8,1],rope:[6,25,22,9,1]},seed:()=>[
     {id:'r1',c:3,kind:'boulder',wall:'cave',prior:3,sent:false,last:'2026-10-29',expires:'2026-12-10'},
     {id:'r2',c:2,kind:'boulder',wall:'board',prior:2,sent:false,last:'2026-10-22',expires:'2026-11-26'},
     {id:'r3',c:4,kind:'rope',wall:'main',prior:1,sent:false,last:'2026-10-29',expires:'2026-12-17'},
-    {id:'r4',c:3,kind:'boulder',wall:'slabb',prior:5,sent:false,last:'2026-09-17',expires:'2026-10-29'}]},
+    {id:'r4',c:3,kind:'boulder',wall:'slabb',prior:5,sent:false,last:'2026-09-17',expires:'2026-10-29'},
+    {id:'r5',c:1,kind:'boulder',wall:'cave',prior:2,sent:true,last:'2026-10-29',expires:'2026-12-10'},
+    {id:'r6',c:0,kind:'boulder',wall:'slabb',prior:0,sent:true,last:'2026-10-22',expires:'2026-11-26'},
+    {id:'r7',c:2,kind:'rope',wall:'main',prior:1,sent:true,last:'2026-10-29',expires:'2026-12-17'}]},
   harbour:{name:'Harbour gym',grading:'standard',history:{boulder:[5,12,25,40,30,14,5,1,0,0,0],rope:[1,2,6,10,22,25,20,9,4,1,0,0,0,0,0,0,0]},seed:()=>[
     {id:'r1',c:5,kind:'boulder',wall:'cave',prior:3,sent:false,last:'2026-10-29',expires:'2026-12-10'},
     {id:'r2',c:4,kind:'boulder',wall:'board',prior:2,sent:false,last:'2026-10-22',expires:'2026-11-26'},
     {id:'r3',c:9,kind:'rope',wall:'main',prior:1,sent:false,last:'2026-10-29',expires:'2026-12-17'},
-    {id:'r4',c:4,kind:'boulder',wall:'slabb',prior:5,sent:false,last:'2026-09-17',expires:'2026-10-29'}]}};
+    {id:'r4',c:4,kind:'boulder',wall:'slabb',prior:5,sent:false,last:'2026-09-17',expires:'2026-10-29'},
+    {id:'r5',c:3,kind:'boulder',wall:'cave',prior:2,sent:true,last:'2026-10-29',expires:'2026-12-10'},
+    {id:'r6',c:1,kind:'boulder',wall:'slabb',prior:0,sent:true,last:'2026-10-22',expires:'2026-11-26'},
+    {id:'r7',c:5,kind:'rope',wall:'main',prior:1,sent:true,last:'2026-10-29',expires:'2026-12-17'}]}};
 let gymId='home';
 const gym=()=>GYMS[gymId];
 const byGrade=()=>gym().grading==='standard';
@@ -272,8 +288,12 @@ function grades(kind){
 const G=(kind,i)=>grades(kind)[i];
 // Your own grade for a climb, stored as personal_grade_id like outdoors. Soft or hard follows from comparing it with the
 // gym's grade, so it is never asked. It lives in details, not the card, since most climbs never need it.
-// Details offer the whole scale. Empty means the middle of the range, or the gym's grade.
+// Details offer five grades around the climb's grade: the gym's grade, or the middle of the colour's range.
+// Empty means the middle of the range, or the gym's grade.
 function gradeScale(kind){return byGrade()?grades(kind).map(g=>g.n):kind==='boulder'?FONT:FRENCH}
+function gradeChoices(r){const sc=gradeScale(r.kind);let mid=r.c;
+  if(!byGrade()){const [lo,hi]=r.kind==='boulder'?COLOURS[r.c].b:COLOURS[r.c].r;mid=Math.round((lo+hi)/2)}
+  const from=Math.max(0,Math.min(mid-2,sc.length-5));return sc.slice(from,from+5)}
 // What the chips show as picked: your grade, or in a numbered gym the gym's grade until you change it.
 const shownGrade=e=>{const r=routeOf(e.route);return e.myGrade??(byGrade()?G(r.kind,r.c).n:null)};
 // Text on a ramp shade: whichever of near-black and white has more contrast (WCAG), so it never flips while the fill is still light.
@@ -303,22 +323,30 @@ const isOpenProject=r=>!r.sent&&r.expires>=S.date&&(r.prior>0||S.entries.some(e=
 const pastProjects=(c,kind)=>S.routes.filter(r=>r.c===c&&r.kind===kind&&r.last&&isOpenProject(r));
 // Open climbs of this colour that you tried earlier in this session, newest first.
 const sessionTries=(c,kind)=>[...S.entries].reverse().map(e=>routeOf(e.route)).filter((r,i,a)=>r.c===c&&r.kind===kind&&!r.last&&a.indexOf(r)===i&&isOpenProject(r));
+const pastSends=(c,kind)=>S.routes.filter(r=>r.c===c&&r.kind===kind&&r.last&&r.sent&&r.expires>=S.date);
+const when=()=>S.live?'tonight':'that day';
 const sessionSends=(c,kind)=>S.entries.filter(e=>isSend(e)&&routeOf(e.route).c===c&&routeOf(e.route).kind===kind).map(e=>e.route).filter((v,i,a)=>a.indexOf(v)===i);
 
 function newRoute(c,kind){const r={id:'n'+(++uid),c,kind,wall:S.wall[kind],prior:0,sent:false,last:null,expires:'2026-12-31'};S.routes.push(r);return r}
+// A climb's angle is its own if you set one, otherwise its wall's.
+const angleOf=r=>r.angle||wallOf(r.wall)?.angle;
+// A climb logged for the first time this session, with no history yet. Changing its wall or angle just corrects it;
+// changing them on a climb you tried before means it was a different climb.
+const isFresh=e=>{const r=routeOf(e.route);return!r.last&&S.entries.filter(x=>x.route===r.id).length===1};
 function dropIfUnused(id){const r=routeOf(id);if(r&&!r.last&&!S.entries.some(e=>e.route===id))S.routes=S.routes.filter(x=>x.id!==id)}
 
 /* ---------- logging ---------- */
 function logTap(c){
-  const kind=S.kind,open=sessionTries(c,kind)[0];
-  // Topping a colour you fell on earlier tonight is most likely the same climb. Otherwise it is a new one.
-  const r=open||newRoute(c,kind);
-  addEntry(r);
+  const kind=S.kind,w=wallOf(S.wall[kind]),open=sessionTries(c,kind).find(r=>r.wall===w.id&&angleOf(r)===w.angle);
+  // Topping a colour you tried earlier tonight on the same wall and angle is most likely the same climb, so it is matched,
+  // and the card asks to confirm. Anything else starts as a new climb, and the card asks about the likeliest match.
+  const e=addEntry(open||newRoute(c,kind));
+  e.auto=!!open;
   S.bump=c+kind;
 }
 function addEntry(r,topped=true){
   const w=wallOf(r.wall);
-  const e={id:'e'+(++uid),route:r.id,topped,rested:false,myGrade:null,tries:1,ropeType:r.kind==='rope'?S.ropeType:null,angle:r.angle||(w?w.angle:null),holds:[],moves:[],note:'',at:new Date()};
+  const e={id:'e'+(++uid),route:r.id,topped,rested:false,auto:false,answered:false,myGrade:null,tries:1,ropeType:r.kind==='rope'?S.ropeType:null,angle:r.angle||(w?w.angle:null),holds:[],moves:[],note:'',at:new Date()};
   S.entries.push(e);S.last=e.id;
   if(S.live&&!S.startedAt)S.startedAt=new Date(Date.now()-60000);
   return e;
@@ -388,10 +416,10 @@ function sessionHTML(){
      <button role="tab" class="${k==='rope'?'on':''}" aria-selected="${k==='rope'}" data-a="kind" data-v="rope">Rope${nr?' · '+nr:''}</button>
     </div>
     <div class="stack" style="gap:8px;margin-top:10px">
-     <div class="chips" role="group" aria-label="Wall">${walls.map(w=>`<button class="chip ${S.wall[k]===w.id?'on':''}" data-a="wall" data-v="${w.id}" aria-pressed="${S.wall[k]===w.id}">${esc(w.name)} <small class="mono">${w.height} m · ${w.angle.toLowerCase()}</small></button>`).join('')}</div>
+     <div class="chips" role="group" aria-label="Wall">${walls.map(w=>`<button class="chip ${S.wall[k]===w.id?'on':''}" data-a="wall" data-v="${w.id}" aria-pressed="${S.wall[k]===w.id}">${esc(w.name)} <small class="mono">${w.height} m · ${angleName(w.angle)}${w.deg?' '+w.deg+'°':''}</small></button>`).join('')}</div>
     </div>
     ${projs.length?`<div class="section" style="padding-top:14px"><span class="eyebrow">Your projects here</span><div class="projects">${projs.map(r=>{const c=G(r.kind,r.c);const t=r.prior+S.entries.filter(e=>e.route===r.id).reduce((s,e)=>s+e.tries,0);
-      return`<button class="proj" data-a="sendProject" data-id="${r.id}" aria-label="Sent your ${esc(c.n)} project on ${esc(wallOf(r.wall).name)}">${gradeBadge(c)}<span><b style="font-weight:600;font-size:13px">${esc(wallOf(r.wall).name)}</b><small>${plural(t,'try','tries')} · ${r.last?fmtDate(r.last):'tonight'}</small></span></button>`}).join('')}</div></div>`:''}
+      return`<button class="proj" data-a="sendProject" data-id="${r.id}" aria-label="Sent your ${esc(c.n)} project on ${esc(wallOf(r.wall).name)}">${gradeBadge(c)}<span><b style="font-weight:600;font-size:13px">${esc(wallOf(r.wall).name)}</b><small>${plural(t,'try','tries')} · ${r.last?fmtDate(r.last):when()}</small></span></button>`}).join('')}</div></div>`:''}
     <div class="section" style="padding-top:14px">
      <div class="row between"><span class="eyebrow">Tap when you top it</span>
       <div class="winnav"><button class="iconbtn" data-a="win" data-d="-1" aria-label="Easier ${noun()[1]}" ${S.win[k]<=0?'disabled':''}>${I.left}</button><span class="cap mono" id="wincap" aria-live="polite">${winCap(k)}</span><button class="iconbtn" data-a="win" data-d="1" aria-label="Harder ${noun()[1]}" ${S.win[k]>=grades(k).length-3?'disabled':''}>${I.right}</button></div></div>
@@ -419,23 +447,38 @@ function why(e){const st=styleOf(e),p=priorOf(e),r=routeOf(e.route);
   if(st==='Flash')return'First try, so it logs as a flash.';
   return p.tries?`Your ${ordinal(totalTries(e))} try on this ${G(r.kind,r.c).lc}${r.last?`, counting ${plural(r.prior,'try','tries')} from ${fmtDate(r.last)}`:''}, so it logs as a redpoint.`:`Topped after ${plural(e.tries,'try','tries')}, so it logs as a redpoint.`;
 }
+// Climbs this one could be, likeliest first: an open try from this session, a project from an earlier session, then for a
+// send a lap of a climb sent this session, then a repeat of one sent before. Only climbs of the same colour on the same
+// wall and angle can be the same climb, so nothing else is offered. Changing the angle in the card asks again.
+function candidates(e){
+  const r=routeOf(e.route),cn=G(r.kind,r.c).lc,list=[],wn=x=>esc(wallOf(x.wall).name);
+  const add=(x,ask,label,sub)=>{if(x.id!==r.id&&x.wall===r.wall&&angleOf(x)===e.angle&&!list.some(y=>y.id===x.id))list.push({id:x.id,ask,label,sub})};
+  sessionTries(r.c,r.kind).forEach(x=>add(x,`Is this the ${cn} you tried ${when()}?`,`The ${cn} you tried ${when()}`,wn(x)));
+  pastProjects(r.c,r.kind).forEach(x=>add(x,`Is this your ${cn} project from ${fmtDate(x.last)}?`,`Your ${cn} project from ${fmtDate(x.last)}`,`${wn(x)} · ${plural(x.prior,'try','tries')}`));
+  if(isSend(e)){
+    sessionSends(r.c,r.kind).map(routeOf).forEach(x=>add(x,`Same ${cn} again?`,`Same ${cn} again`,wn(x)));
+    pastSends(r.c,r.kind).forEach(x=>add(x,`Is this the ${cn} you sent ${fmtDate(x.last)}?`,`The ${cn} you sent ${fmtDate(x.last)}`,`${wn(x)} · repeat`));
+  }
+  return list;
+}
 function stripHTML(e){
   const r=routeOf(e.route),c=G(r.kind,r.c),st=styleOf(e),cn=c.lc;
-  const past=pastProjects(r.c,r.kind).filter(x=>x.id!==r.id),tonight=sessionTries(r.c,r.kind).filter(x=>x.id!==r.id),sent=sessionSends(r.c,r.kind).filter(x=>x!==r.id&&!S.entries.some(y=>y.route===x&&y.id===e.id));
-  const isNew=!r.last&&S.entries.filter(x=>x.route===r.id).length===1;
-  const alts=[];
-  // Offer the likely same climbs: tonight's open tries first, then projects from earlier sessions, then a repeat of a send tonight.
-  tonight.forEach(x=>alts.push(`<button class="chip" data-a="match" data-id="${x.id}">${I.target}The ${cn} you tried tonight</button>`));
-  past.forEach(x=>alts.push(`<button class="chip" data-a="match" data-id="${x.id}">${I.target}Your ${cn} from ${fmtDate(x.last)} <small>${esc(wallOf(x.wall).name)} · ${plural(x.prior,'try','tries')}</small></button>`));
-  if(isSend(e))sent.slice(0,1).forEach(x=>alts.push(`<button class="chip" data-a="match" data-id="${x}">Same ${cn} again</button>`));
-  if(!isNew)alts.push(`<button class="chip" data-a="different">A different ${cn}</button>`);
+  const isNew=isFresh(e),cands=candidates(e);
+  // One clear question when a match is likely: confirm an automatic match, or ask about the likeliest climb.
+  const q=e.answered?null:e.auto?{confirm:true}:cands[0];
+  const ask=!q?'':q.confirm
+    ?`<div class="ask"><b>Is this the ${cn} you tried ${when()}?</b><div class="row" style="gap:6px"><button class="chip on" data-a="answer">Yes</button><button class="chip" data-a="different">No, a different ${cn}</button></div></div>`
+    :`<div class="ask"><span><b>${q.ask}</b><small>${q.sub}</small></span><div class="row" style="gap:6px"><button class="chip on" data-a="match" data-id="${q.id}">Yes</button><button class="chip" data-a="answer">No, new ${cn}</button></div></div>`;
+  const alts=cands.filter(x=>x!==q).map(x=>`<button class="chip" data-a="match" data-id="${x.id}">${I.target}${x.label} <small>${x.sub}</small></button>`);
+  if(!isNew&&!q?.confirm)alts.push(`<button class="chip" data-a="different">A different ${cn}</button>`);
   const triesCtl=(st==='Redpoint'&&isNew)||!e.topped;
   return`<div class="strip" role="status" aria-live="polite">
     <div class="row between"><div class="row" style="gap:6px;min-width:0"><span class="done${isSend(e)?'':' try'}">${isSend(e)?I.check+'Send added':e.topped?'Topped with rests':'Attempt added'}</span>${gradeBadge(c)}<span class="style s-${st}">${st}</span></div>
      <div class="row" style="gap:2px"><button class="btn ghost sm" data-a="undo">${I.undo} Undo</button><button class="iconbtn" data-a="closeStrip" aria-label="Done">${I.x}</button></div></div>
-    <p class="note" style="font-size:13px">${why(e)}</p>
+    ${ask}
+    <p class="note" style="font-size:13px"><b style="font-weight:600;color:var(--ink)">${esc(wallOf(r.wall).name)}</b> · ${why(e)}</p>
     ${r.kind==='rope'?`<div class="qrow"><span class="lbl" id="q-rope">Rope</span><div class="seg" role="group" aria-labelledby="q-rope">${ROPETYPES.map(([v,l])=>`<button class="${e.ropeType===v?'on':''}" data-a="eRope" data-v="${v}" aria-pressed="${e.ropeType===v}">${l}</button>`).join('')}</div></div>`:''}
-    <div class="qrow"><span class="lbl" id="q-angle">Angle</span><div class="seg" role="group" aria-labelledby="q-angle">${ANGLES.map(a=>`<button class="${e.angle===a?'on':''}" data-a="eAngle" data-v="${a}" aria-pressed="${e.angle===a}">${a}</button>`).join('')}</div></div>
+    <div class="qrow"><span class="lbl" id="q-angle">Angle</span><div class="seg" role="group" aria-labelledby="q-angle">${ANGLES.map(([k,short,long])=>`<button class="${e.angle===k?'on':''}" data-a="eAngle" data-v="${k}" aria-pressed="${e.angle===k}" aria-label="${long}">${short}</button>`).join('')}</div></div>
     <div class="chips" role="group" aria-label="${isNew?'Is it one you tried before?':'Change the climb'}">
      ${alts.join('')}
      ${e.topped&&st==='Flash'?`<button class="chip" data-a="notFirst">Not first try</button>`:''}
@@ -443,7 +486,7 @@ function stripHTML(e){
      ${r.kind==='rope'&&e.topped?`<button class="chip" data-a="rested" data-v="${e.rested?0:1}">${e.rested?'Climbed it clean':'Rested on the rope'}</button>`:''}
      <button class="chip" data-a="edit" data-id="${e.id}">Details</button>
     </div>
-    ${triesCtl?`<div class="row between"><span class="lbl">${e.topped?'Tries tonight':'Tries'}</span><div class="stepper"><button data-a="tries" data-d="-1" aria-label="Fewer tries" ${e.tries<=(isSend(e)&&!priorOf(e).tries?2:1)?'disabled':''}>−</button><span>${e.tries}</span><button data-a="tries" data-d="1" aria-label="More tries">+</button></div></div>`:''}
+    ${triesCtl?`<div class="row between"><span class="lbl">${e.topped?'Tries '+when():'Tries'}</span><div class="stepper"><button data-a="tries" data-d="-1" aria-label="Fewer tries" ${e.tries<=(isSend(e)&&!priorOf(e).tries?2:1)?'disabled':''}>−</button><span>${e.tries}</span><button data-a="tries" data-d="1" aria-label="More tries">+</button></div></div>`:''}
    </div>`;
 }
 function stats(){
@@ -473,11 +516,11 @@ function editHTML(){
       ${(r.kind==='rope'?[['send','Topped clean'],['rests','Topped with rests'],['no',"Didn't top"]]:[['send','Topped'],['no',"Didn't top"]]).map(([v,l])=>{const on=v===(isSend(e)?'send':e.topped?'rests':'no');
         return`<button class="chip ${on?'on':''}" data-a="result" data-v="${v}" aria-pressed="${on}">${l}</button>`}).join('')}</div>
       <div class="row between"><span class="note">${why(e)}</span><span class="style s-${st}">${st}</span></div></div>
-    ${e.topped?`<div class="field"><span class="lbl">My grade</span><div class="chips">${gradeScale(r.kind).map(g=>`<button class="chip mono ${shownGrade(e)===g?'on':''}" data-a="myGrade" data-v="${esc(g)}" aria-pressed="${shownGrade(e)===g}">${esc(g)}</button>`).join('')}</div><p class="note">${byGrade()?`Leave it at ${esc(c.n)} if it felt like the grade.`:`Leave it empty to count it as the middle of ${esc(c.n)}, ${c.sub}.`}${e.myGrade?' '+feelText(e):''}</p></div>`:''}
+    ${e.topped?`<div class="field"><span class="lbl">My grade</span><div class="chips">${gradeChoices(r).map(g=>`<button class="chip mono ${shownGrade(e)===g?'on':''}" data-a="myGrade" data-v="${esc(g)}" aria-pressed="${shownGrade(e)===g}">${esc(g)}</button>`).join('')}</div><p class="note">${byGrade()?`Leave it at ${esc(c.n)} if it felt like the grade.`:`Leave it empty to count it as the middle of ${esc(c.n)}, ${c.sub}.`}${e.myGrade?' '+feelText(e):''}</p></div>`:''}
     <div class="row between"><span class="lbl">Tries this time</span><div class="stepper"><button data-a="tries" data-d="-1" aria-label="Fewer tries" ${e.tries<=1?'disabled':''}>−</button><span>${e.tries}</span><button data-a="tries" data-d="1" aria-label="More tries">+</button></div></div>
     ${r.kind==='rope'?`<div class="field"><span class="lbl">How you climbed</span><div class="chips">${ROPETYPES.map(([v,l])=>`<button class="chip ${e.ropeType===v?'on':''}" data-a="eRope" data-v="${v}" aria-pressed="${e.ropeType===v}">${l}</button>`).join('')}</div></div>`:''}
     <div class="field"><span class="lbl">Wall</span><div class="chips">${walls.map(x=>`<button class="chip ${r.wall===x.id?'on':''}" data-a="eWall" data-v="${x.id}" aria-pressed="${r.wall===x.id}">${esc(x.name)}</button>`).join('')}</div></div>
-    <div class="field"><span class="lbl">Angle</span><div class="chips">${ANGLES.map(a=>`<button class="chip ${e.angle===a?'on':''}" data-a="eAngle" data-v="${a}" aria-pressed="${e.angle===a}">${a}</button>`).join('')}</div>${fromWall?`<p class="note">From the wall. Change it if this climb is steeper or flatter than the wall.</p>`:''}</div>
+    <div class="field"><span class="lbl">Angle</span><div class="chips">${ANGLES.map(([k,,long,deg])=>`<button class="chip ${e.angle===k?'on':''}" data-a="eAngle" data-v="${k}" aria-pressed="${e.angle===k}">${long} <small class="mono">${deg}</small></button>`).join('')}</div>${fromWall?`<p class="note">From the wall${w.deg?`, ${w.deg}°`:''}. Change it if this climb is steeper or flatter than the wall.</p>`:''}</div>
     <div class="field"><span class="lbl">Main holds</span><div class="chips">${HOLDS.map(h=>`<button class="chip ${e.holds.includes(h)?'on':''}" data-a="eHold" data-v="${h}" aria-pressed="${e.holds.includes(h)}">${h}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Movement</span><div class="chips">${MOVES.map(h=>`<button class="chip ${e.moves.includes(h)?'on':''}" data-a="eMove" data-v="${h}" aria-pressed="${e.moves.includes(h)}">${h}</button>`).join('')}</div><p class="note">Holds and movement feed your style profile, so you can see what you send and what you avoid.</p></div>
     <div class="field"><label class="lbl" for="e-note">Beta</label><textarea class="input" id="e-note" rows="2" placeholder="Heel hook on the volume, then the left crimp">${esc(e.note)}</textarea><p class="note">Only you see beta.</p></div>
@@ -538,12 +581,13 @@ const A={
   date:v=>{S.date=v},
   kind:v=>{S.kind=v;S.last=null},
   wall:v=>{S.wall[S.kind]=v},
-  sendProject:(v,el)=>{addEntry(routeOf(el.dataset.id))},
+  sendProject:(v,el)=>{addEntry(routeOf(el.dataset.id)).answered=true},
   closeStrip:()=>{S.last=null},
   undo:()=>{removeEntry(cur())},
   toastUndo:()=>{S.toastUndo?.();clearTimeout(toastT);S.toast=null;S.toastUndo=null},
-  match:(v,el)=>{setRoute(cur(),el.dataset.id);cur().tries=1},
-  different:()=>{const e=cur(),r=routeOf(e.route);setRoute(e,newRoute(r.c,r.kind).id);e.tries=1},
+  match:(v,el)=>{const e=cur();setRoute(e,el.dataset.id);e.tries=1;e.answered=true},
+  answer:()=>{cur().answered=true},
+  different:()=>{const e=cur(),r=routeOf(e.route);setRoute(e,newRoute(r.c,r.kind).id);e.tries=1;e.answered=true},
   notFirst:()=>{cur().tries=2},
   topped:v=>{const e=cur();e.topped=v==='1';if(!e.topped)e.rested=false;if(e.topped&&e.tries<1)e.tries=1},
   rested:v=>{cur().rested=v==='1'},
@@ -556,9 +600,14 @@ const A={
   closeSheet:()=>{S.sheet=null},
   // The latest rope type you picked becomes the default for the next rope climb, so you only change it when you switch.
   eRope:v=>{cur().ropeType=v;S.ropeType=v;lastRope.set(v)},
-  eWall:v=>{const e=cur(),r=routeOf(e.route);r.wall=v;r.angle=null;e.angle=wallOf(v).angle},
-  // The angle belongs to the climb, so a repeat or a later try on it keeps the angle you set.
-  eAngle:v=>{const e=cur();e.angle=v;routeOf(e.route).angle=v},
+  // Moving a climb to another wall in details. A climb you tried before stays on its wall: another wall means it was a
+  // different climb. Fixing the latest climb also moves the session there, since you most likely forgot to switch.
+  eWall:v=>{const e=cur(),r=routeOf(e.route);if(r.wall===v)return;if(e.id===S.entries[S.entries.length-1].id)S.wall[r.kind]=v;
+    if(isFresh(e)){r.wall=v;r.angle=null;e.angle=wallOf(v).angle}else{const n=newRoute(r.c,r.kind);n.wall=v;setRoute(e,n.id);e.tries=1}e.auto=false},
+  // The angle belongs to the climb, so a repeat or a later try on it keeps the angle you set. On a climb you tried
+  // before, another angle means another climb on the same wall.
+  eAngle:v=>{const e=cur(),r=routeOf(e.route);if(e.angle===v)return;
+    if(isFresh(e)){e.angle=v;r.angle=v}else{const n=newRoute(r.c,r.kind);n.wall=r.wall;n.angle=v;setRoute(e,n.id);e.tries=1;e.auto=false}},
   eHold:v=>{const e=cur();e.holds=e.holds.includes(v)?e.holds.filter(x=>x!==v):[...e.holds,v]},
   eMove:v=>{const e=cur();e.moves=e.moves.includes(v)?e.moves.filter(x=>x!==v):[...e.moves,v]},
   remove:(v,el)=>{removeEntry(S.entries.find(x=>x.id===el.dataset.id))},
