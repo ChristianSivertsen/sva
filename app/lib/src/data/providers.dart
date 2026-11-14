@@ -244,6 +244,14 @@ final FutureProviderFamily<GymSetup?, String> gymSetupProvider = FutureProvider
           .setup(gymId, userId: ref.watch(currentUserIdProvider)),
     );
 
+/// The user's open projects at a gym, last tried first.
+final FutureProviderFamily<List<GymProject>, String> gymProjectsProvider =
+    FutureProvider.autoDispose.family(
+      (ref, gymId) => ref
+          .watch(gymRouteRepositoryProvider)
+          .projects(gymId, userId: ref.watch(currentUserIdProvider)),
+    );
+
 /// How one of the user's gym routes is shown (it has no name), or `null`
 /// for any other route.
 final FutureProviderFamily<GymRouteLabel?, String> gymRouteLabelProvider =

@@ -10,9 +10,16 @@ import 'package:sva/src/logging/gym_tiles.dart';
 import 'package:sva/src/logging/here.dart';
 import 'package:sva/src/logging/time_zone.dart';
 import 'package:sva/src/places/form_parts.dart';
+import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva_core/sva_core.dart'
-    show GradeSystem, GymRouteKey, GymSessionLog, nearestWithin;
+    show
+        GradeSystem,
+        GymMatchKind,
+        GymPastRoute,
+        GymRouteKey,
+        GymSessionLog,
+        nearestWithin;
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
 
@@ -39,8 +46,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
   String _ropeType = 'lead';
   GymSessionLog _log = const GymSessionLog();
 
-  /// What each route's tile looked like when tapped, for the list.
-  final _tiles = <GymTile>[];
+  /// The gym [_log]'s projects are from.
+  String? _logGym;
   var _saving = false;
 
   /// The gym to log at: the one picked (or pinned by the first climb),
@@ -84,18 +91,69 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     setState(() {
       // The session stays at this gym once it has a climb.
       _gymId = gymId;
-      final routes = _log.routes.length;
       _log = _log.tap(key, ropeType: kind == 'rope' ? _ropeType : null);
-      if (_log.routes.length > routes) _tiles.add(tile);
     });
   }
 
-  void _remove(int index) => setState(() {
-    final route = _log.entries[index].route;
-    final routes = _log.routes.length;
-    _log = _log.remove(index);
-    if (_log.routes.length < routes) _tiles.removeAt(route);
+  void _sendProject(String gymId, GymPastRoute project) => setState(() {
+    _gymId = gymId;
+    _log = _log.sendProject(
+      project.id,
+      ropeType: project.key.kind == 'rope' ? _ropeType : null,
+    );
   });
+
+  /// Marks [project] as gone, so it is no longer offered.
+  Future<void> _gone(
+    GymPastRoute project, {
+    required String colour,
+    required String wall,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final colors = context.svaColors;
+    // You can't log on it afterwards, so ask first (docs/DESIGN.md,
+    // Destructive button).
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.logIndoorProjectGoneTitle(colour, wall)),
+        content: Text(l10n.logIndoorProjectGoneBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.logIndoorProjectGoneCancel),
+          ),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colors.danger,
+              side: BorderSide(color: colors.danger),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.logIndoorProjectGoneConfirm),
+          ),
+        ],
+      ),
+    );
+    if (sure != true || !mounted) return;
+    try {
+      await ref
+          .read(gymRouteRepositoryProvider)
+          .markGone(project.id, userId: ref.read(currentUserIdProvider));
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.logIndoorProjectGoneFailed)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _log = _log.withoutProject(project.id));
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.logIndoorProjectGoneDone(colour, wall))),
+    );
+  }
+
+  void _remove(int index) => setState(() => _log = _log.remove(index));
 
   void _update(int index, {bool? topped, int? tries, String? ropeType}) =>
       setState(() {
@@ -125,12 +183,15 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                   ref.read(settingsProvider).value?.defaultVisibility ??
                   const Settings().defaultVisibility,
               routes: [
-                for (final GymRouteKey r in _log.routes)
-                  IndoorRouteDraft(
-                    wallId: r.wallId,
-                    colourId: r.colourId,
-                    gradeId: r.gradeId,
-                  ),
+                for (final (i, GymRouteKey r) in _log.routes.indexed)
+                  if (_log.routeIds[i] case final id?)
+                    IndoorRouteDraft(routeId: id)
+                  else
+                    IndoorRouteDraft(
+                      wallId: r.wallId,
+                      colourId: r.colourId,
+                      gradeId: r.gradeId,
+                    ),
               ],
               climbs: [
                 for (final (i, e) in _log.entries.indexed)
@@ -156,6 +217,35 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  /// The other climbs entry [index], shown as [colour], might be, and a
+  /// different one of that colour when it was matched to one.
+  List<(String, VoidCallback)> _matches(
+    AppLocalizations l10n,
+    int index,
+    String colour,
+  ) => [
+    for (final m in _log.matches(index))
+      (
+        switch (m.kind) {
+          GymMatchKind.triedToday => l10n.logIndoorMatchTried(colour),
+          GymMatchKind.project => l10n.logIndoorMatchProject(
+            colour,
+            formatDay(
+              l10n,
+              _log.past.firstWhere((p) => p.id == m.pastId).lastTried,
+            ),
+          ),
+          GymMatchKind.sentToday => l10n.logIndoorMatchAgain(colour),
+        },
+        () => setState(() => _log = _log.moveTo(index, m)),
+      ),
+    if (!_log.isFresh(index))
+      (
+        l10n.logIndoorMatchDifferent(colour),
+        () => setState(() => _log = _log.moveToNew(index)),
+      ),
+  ];
 
   /// The grade system a graded gym's tiles use for [kind], from settings.
   GradeSystem? _system(String kind) {
@@ -199,6 +289,17 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     if (setupValue.hasError) return message(l10n.logIndoorLoadFailed);
     final setup = setupValue.value;
     if (setup == null) return const _Loading();
+    // Without its projects the log still works, as for a new gym.
+    final projectsValue = ref.watch(gymProjectsProvider(gymId));
+    if (projectsValue.isLoading && !projectsValue.hasValue) {
+      return const _Loading();
+    }
+    if (_logGym != gymId && _log.entries.isEmpty) {
+      _logGym = gymId;
+      _log = GymSessionLog(
+        past: _pastRoutes(projectsValue.value ?? const [], setup),
+      );
+    }
 
     final kinds = [
       for (final k in const ['boulder', 'rope'])
@@ -218,17 +319,32 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     final wall =
         walls.where((w) => w.id == _wall[kind]).firstOrNull ??
         walls.firstOrNull;
-    final tiles = kind == null
-        ? const <GymTile>[]
-        : gymTiles(
-            setup,
-            system: _system(kind),
-            ungraded: l10n.logIndoorUngraded,
-          );
+    final tilesByKind = <String, List<GymTile>>{};
+    List<GymTile> tilesFor(String kind) => tilesByKind[kind] ??= gymTiles(
+      setup,
+      system: _system(kind),
+      ungraded: l10n.logIndoorUngraded,
+    );
+    final tiles = kind == null ? const <GymTile>[] : tilesFor(kind);
     final climbs = _log.climbs;
     final entries = _log.entries;
     String? wallName(String id) =>
         setup.walls.where((w) => w.id == id).firstOrNull?.name;
+    // A route is shown as its tile: its colour, grade, or the ungraded one.
+    GymTile? tileOf(GymRouteKey key) => tilesFor(key.kind)
+        .where((t) => t.colourId == key.colourId && t.gradeId == key.gradeId)
+        .firstOrNull;
+    // A grade outside the grade system in settings, say after changing
+    // it, has no tile; it shows as a climb, and taps can't match it.
+    String labelOf(GymRouteKey key) =>
+        tileOf(key)?.label ?? l10n.logIndoorUngraded;
+    // Inside a sentence a colour is lowercase ("the blue you tried"); a
+    // grade such as 6A stays as it is.
+    String inSentence(GymRouteKey key) =>
+        key.colourId == null ? labelOf(key) : labelOf(key).toLowerCase();
+    final projects = kind == null
+        ? const <({GymPastRoute route, int tries})>[]
+        : _log.projects(kind);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -292,6 +408,34 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                 if (v.isNotEmpty) setState(() => _wall[kind] = v.single);
               },
             ),
+          if (projects.isNotEmpty) ...[
+            formGap,
+            Semantics(
+              header: true,
+              child: Text(l10n.logIndoorProjects, style: text.label),
+            ),
+            Text(l10n.logIndoorProjectsHint, style: muted),
+            const SizedBox(height: SvaSpace.xs),
+            for (final (:route, :tries) in projects)
+              _ProjectCard(
+                tile: tileOf(route.key),
+                colour: labelOf(route.key),
+                wall: wallName(route.key.wallId) ?? '',
+                detail: l10n.logIndoorProjectSub(
+                  tries,
+                  formatDay(l10n, route.lastTried),
+                ),
+                onSend: () => _sendProject(gymId, route),
+                // One climbed in this session stays, so it can be saved.
+                onGone: _log.routeIds.contains(route.id)
+                    ? null
+                    : () => _gone(
+                        route,
+                        colour: labelOf(route.key),
+                        wall: wallName(route.key.wallId) ?? '',
+                      ),
+              ),
+          ],
           formGap,
           if (tiles.isEmpty)
             message(l10n.logIndoorNoTiles)
@@ -319,7 +463,12 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
             GymTapCard(
               entry: entries.last,
               style: climbs.last.style,
-              label: _tiles[entries.last.route].label,
+              label: labelOf(_log.routes[entries.last.route]),
+              matches: _matches(
+                l10n,
+                entries.length - 1,
+                inSentence(_log.routes[entries.last.route]),
+              ),
               onUndo: () => _remove(entries.length - 1),
               onTopped: (t) => _update(entries.length - 1, topped: t),
               onTries: (t) => _update(entries.length - 1, tries: t),
@@ -344,7 +493,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                 Expanded(
                   child: Text(
                     [
-                      _tiles[e.route].label,
+                      labelOf(_log.routes[e.route]),
                       ?wallName(_log.routes[e.route].wallId),
                     ].join(' · '),
                     style: text.body,
@@ -355,7 +504,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                   label: l10n.ascentStyle(climbs[i].style.name),
                 ),
                 IconButton(
-                  tooltip: l10n.logRemoveClimb(_tiles[e.route].label),
+                  tooltip: l10n.logRemoveClimb(labelOf(_log.routes[e.route])),
                   onPressed: () => _remove(i),
                   icon: const Icon(LucideIcons.x),
                 ),
@@ -385,3 +534,120 @@ class _Loading extends StatelessWidget {
 /// A wall's angle type, with its degrees when they are known.
 String _angleLabel(AppLocalizations l10n, String angle, int? deg) =>
     deg == null ? angle : l10n.wallAngleDegrees(angle, deg);
+
+/// [projects] as the gym log knows them. One on a wall that was removed
+/// is left out: it can't be climbed.
+List<GymPastRoute> _pastRoutes(List<GymProject> projects, GymSetup setup) => [
+  for (final p in projects)
+    if (p.route.gymWallId case final wall?
+        when setup.walls.any((w) => w.id == wall))
+      (
+        id: p.route.id,
+        key: (
+          wallId: wall,
+          kind: p.route.discipline == 'boulder' ? 'boulder' : 'rope',
+          colourId: p.route.gymColourGradeId,
+          gradeId: p.gradeId,
+        ),
+        tries: p.tries,
+        lastTried: p.lastTried,
+      ),
+];
+
+/// A project in "Your projects here": tap it when you send it, or mark it
+/// as gone.
+class _ProjectCard extends StatelessWidget {
+  const new({
+    required this.tile,
+    required this.colour,
+    required this.wall,
+    required this.detail,
+    required this.onSend,
+    required this.onGone,
+  });
+
+  final GymTile? tile;
+  final String colour;
+  final String wall;
+
+  /// Tries so far and when.
+  final String detail;
+  final VoidCallback onSend;
+
+  /// `null` when it can't be marked as gone now.
+  final VoidCallback? onGone;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final text = context.svaText;
+    final colors = context.svaColors;
+    return Card(
+      margin: const EdgeInsets.only(bottom: SvaSpace.xs),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: l10n.logIndoorProjectSend(colour, wall),
+              onTap: onSend,
+              excludeSemantics: true,
+              child: InkWell(
+                onTap: onSend,
+                child: Padding(
+                  padding: const EdgeInsets.all(SvaSpace.sm),
+                  child: Row(
+                    spacing: SvaSpace.sm,
+                    children: [
+                      Container(
+                        width: SvaSpace.lg,
+                        height: SvaSpace.lg,
+                        decoration: BoxDecoration(
+                          color: tile?.fill ?? colors.surfaceSunk,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: colors.line),
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              [
+                                colour,
+                                wall,
+                              ].where((s) => s.isNotEmpty).join(' · '),
+                              style: text.label,
+                            ),
+                            Text(
+                              detail,
+                              style: text.caption.copyWith(
+                                color: colors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (onGone != null)
+            Semantics(
+              button: true,
+              label: l10n.logIndoorProjectGoneLabel(colour, wall),
+              onTap: onGone,
+              excludeSemantics: true,
+              child: TextButton(
+                onPressed: onGone,
+                child: Text(l10n.logIndoorProjectGone),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

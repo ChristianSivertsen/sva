@@ -95,6 +95,36 @@ void main() {
     expect(await routes.projects(gymId, userId: 'me'), isEmpty);
   });
 
+  test('M3-7: a project at a gym with standard grades has its grade', () async {
+    final gyms = GymEditor(db);
+    final graded = await gyms.addGym(
+      const NewGym(name: 'Graded', countryCode: 'NO', grading: 'standard'),
+      walls: const [WallDraft(name: 'Wall', kind: 'boulder')],
+      userId: 'me',
+    );
+    final wall = (await gyms.setup(graded, userId: 'me'))!.walls.single.id;
+    final grade = (await (db.select(
+      db.grades,
+    )..where((g) => g.systemKey.equals('font'))).get()).first.id;
+    final route = await routes.add(
+      NewGymRoute(wallId: wall, setOn: '2026-11-03', gradeId: grade),
+      userId: 'me',
+    );
+    final day = await SessionRepository(db).create(
+      SessionsCompanion(
+        setting: const Value('indoor'),
+        localDate: const Value('2026-11-03'),
+        tz: const Value('Europe/Oslo'),
+        visibility: const Value('private'),
+        areaId: Value(graded),
+      ),
+      userId: 'me',
+    );
+    await climb(day, route, AscentStyle.attempt, 1);
+    expect((await routes.projects(graded, userId: 'me')).single.gradeId, grade);
+    expect(await routes.projects(gymId, userId: 'me'), isEmpty);
+  });
+
   test('M3-3: a project ends when it is sent, its wall is reset, or it is '
       'marked as gone', () async {
     final sent = await blueOn(cave);

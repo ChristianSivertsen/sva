@@ -17,6 +17,7 @@ class GymTapCard extends StatelessWidget {
     required this.onTopped,
     required this.onTries,
     required this.onRopeType,
+    this.matches = const [],
     super.key,
   });
 
@@ -29,6 +30,10 @@ class GymTapCard extends StatelessWidget {
   final ValueChanged<bool> onTopped;
   final ValueChanged<int> onTries;
   final ValueChanged<String> onRopeType;
+
+  /// Other climbs this one might be, likeliest first: each a label and
+  /// what choosing it does.
+  final List<(String, VoidCallback)> matches;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +105,22 @@ class GymTapCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (matches.isNotEmpty) ...[
+              Text(
+                l10n.logIndoorMatchAsk,
+                style: text.caption.copyWith(
+                  color: context.svaColors.textMuted,
+                ),
+              ),
+              Wrap(
+                spacing: SvaSpace.xs,
+                runSpacing: SvaSpace.xs,
+                children: [
+                  for (final (label, onPressed) in matches)
+                    ActionChip(label: Text(label), onPressed: onPressed),
+                ],
+              ),
+            ],
             if (entry.ropeType case final rope?)
               ChipGroup(
                 label: l10n.logIndoorRopeType,

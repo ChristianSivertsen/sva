@@ -1136,6 +1136,108 @@ abstract class AppLocalizations {
   /// **'Tap a colour each time you top it.'**
   String get logIndoorTapHint;
 
+  /// No description provided for @logIndoorProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Your projects here'**
+  String get logIndoorProjects;
+
+  /// No description provided for @logIndoorProjectsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap one when you send it.'**
+  String get logIndoorProjectsHint;
+
+  /// No description provided for @logIndoorProjectSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{tries, plural, =1{1 try} other{{tries} tries}} · last {date}'**
+  String logIndoorProjectSub(int tries, String date);
+
+  /// No description provided for @logIndoorProjectSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent your {colour} project on {wall}'**
+  String logIndoorProjectSend(String colour, String wall);
+
+  /// No description provided for @logIndoorProjectGone.
+  ///
+  /// In en, this message translates to:
+  /// **'Gone'**
+  String get logIndoorProjectGone;
+
+  /// No description provided for @logIndoorProjectGoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark your {colour} project on {wall} as gone'**
+  String logIndoorProjectGoneLabel(String colour, String wall);
+
+  /// No description provided for @logIndoorProjectGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark {colour} on {wall} as gone?'**
+  String logIndoorProjectGoneTitle(String colour, String wall);
+
+  /// No description provided for @logIndoorProjectGoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s no longer suggested, and you can\'t log on it again. Your climbs on it stay in your log.'**
+  String get logIndoorProjectGoneBody;
+
+  /// No description provided for @logIndoorProjectGoneCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get logIndoorProjectGoneCancel;
+
+  /// No description provided for @logIndoorProjectGoneConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as gone'**
+  String get logIndoorProjectGoneConfirm;
+
+  /// No description provided for @logIndoorProjectGoneDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{colour} on {wall} is marked as gone.'**
+  String logIndoorProjectGoneDone(String colour, String wall);
+
+  /// No description provided for @logIndoorProjectGoneFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t mark it as gone. Try again.'**
+  String get logIndoorProjectGoneFailed;
+
+  /// No description provided for @logIndoorMatchAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Was it another climb?'**
+  String get logIndoorMatchAsk;
+
+  /// No description provided for @logIndoorMatchTried.
+  ///
+  /// In en, this message translates to:
+  /// **'The {colour} you tried today'**
+  String logIndoorMatchTried(String colour);
+
+  /// No description provided for @logIndoorMatchProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {colour} project from {date}'**
+  String logIndoorMatchProject(String colour, String date);
+
+  /// No description provided for @logIndoorMatchAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Same {colour} again'**
+  String logIndoorMatchAgain(String colour);
+
+  /// No description provided for @logIndoorMatchDifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'A different {colour}'**
+  String logIndoorMatchDifferent(String colour);
+
   /// No description provided for @logIndoorUngraded.
   ///
   /// In en, this message translates to:
