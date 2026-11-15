@@ -51,10 +51,15 @@ typedef GymProject = ({
 /// How a gym route is shown, since it has no name: its colour (or its
 /// grade, with the grade's system) and its wall. All `null` parts are
 /// unknown, such as the wall of a route whose wall was removed.
+/// [colourHex] (`#RRGGBB`) and the grade's place on the shared scale
+/// ([gradeScore], for [gradeType]) colour its holds on the wall image.
 typedef GymRouteLabel = ({
   String? colour,
+  String? colourHex,
   String? grade,
   String? gradeSystem,
+  String? gradeType,
+  double? gradeScore,
   String? wall,
 });
 
@@ -199,10 +204,14 @@ class GymRouteRepository {
                   db.routeGrades.deletedAt.isNull(),
             ))
             .getSingleOrNull();
+    final gradeRow = grade?.readTable(db.grades);
     return (
       colour: colour?.name,
-      grade: grade?.readTable(db.grades).label,
-      gradeSystem: grade?.readTable(db.grades).systemKey,
+      colourHex: colour?.colourHex,
+      grade: gradeRow?.label,
+      gradeSystem: gradeRow?.systemKey,
+      gradeType: grade?.readTable(db.routeGrades).gradeType,
+      gradeScore: gradeRow?.score,
       wall: wall?.name,
     );
   }
