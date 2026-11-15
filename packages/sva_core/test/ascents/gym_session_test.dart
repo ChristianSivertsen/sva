@@ -7,24 +7,28 @@ void main() {
     kind: 'boulder',
     colourId: 'blue',
     gradeId: null,
+    angle: 'angle.overhang',
   );
   const boardBlue = (
     wallId: 'board',
     kind: 'boulder',
     colourId: 'blue',
     gradeId: null,
+    angle: 'angle.overhang',
   );
   const caveGreen = (
     wallId: 'cave',
     kind: 'boulder',
     colourId: 'green',
     gradeId: null,
+    angle: 'angle.overhang',
   );
   const mainBlue = (
     wallId: 'main',
     kind: 'rope',
     colourId: 'blue',
     gradeId: null,
+    angle: 'angle.overhang',
   );
   List<(int, AscentStyle, int)> climbs(GymSessionLog log) => [
     for (final (i, c) in log.climbs.indexed)
@@ -183,6 +187,58 @@ void main() {
               .sendProject('r1')
               .withoutProject('r1'),
       throwsArgumentError,
+    );
+  });
+
+  test('M3-8: topped with rests on the rope is a try, not a send', () {
+    var log = const GymSessionLog()
+        .tap(mainBlue, ropeType: 'lead')
+        .update(0, rested: true);
+    expect(log.climbs.single, (style: AscentStyle.attempt, tries: 1));
+    // Still a project: the clean top next counts it.
+    log = log.tap(mainBlue, ropeType: 'lead');
+    expect(log.routes, hasLength(1));
+    expect(log.climbs.last, (style: AscentStyle.redpoint, tries: 2));
+
+    // Not topped means not rested either, and boulders have no rope.
+    expect(log.update(0, topped: false).entries.first.rested, isFalse);
+    expect(
+      () => const GymSessionLog().tap(caveBlue).update(0, rested: true),
+      throwsArgumentError,
+    );
+  });
+
+  test('M3-8: another wall or angle in details corrects a new climb, or '
+      'makes a tried one another climb', () {
+    // Logged on the wrong wall: just corrected.
+    var log = const GymSessionLog().tap(caveBlue);
+    log = log.moveToWall(0, 'board', angle: 'angle.overhang');
+    expect(log.routes, [boardBlue]);
+
+    // A fall on a blue, then a blue that was steeper: another climb.
+    log = const GymSessionLog()
+        .tap(caveBlue)
+        .update(0, topped: false)
+        .tap(caveBlue);
+    expect(log.routes, hasLength(1), reason: 'matched to the fall');
+    log = log.moveToWall(1, 'cave', angle: 'angle.roof');
+    expect(log.routes, [
+      caveBlue,
+      (
+        wallId: 'cave',
+        kind: 'boulder',
+        colourId: 'blue',
+        gradeId: null,
+        angle: 'angle.roof',
+      ),
+    ]);
+    expect(climbs(log), [
+      (0, AscentStyle.attempt, 1),
+      (1, AscentStyle.flash, 1),
+    ]);
+    expect(
+      identical(log.moveToWall(1, 'cave', angle: 'angle.roof'), log),
+      isTrue,
     );
   });
 }

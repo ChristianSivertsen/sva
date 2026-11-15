@@ -618,6 +618,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'condition_windy': 'Windy',
       'condition_cold': 'Cold',
       'condition_hot': 'Hot',
+      'hold_volume': 'Volumes',
+      'movement_powerful': 'Powerful',
+      'movement_technical': 'Technical',
+      'movement_balance': 'Balance',
+      'movement_coordination': 'Coordination',
+      'movement_dyno': 'Dyno',
+      'movement_compression': 'Compression',
       'other': '',
     });
     return '$_temp0';
@@ -794,6 +801,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logIndoorTapHint => 'Tap a colour each time you top it.';
+
+  @override
+  String get logIndoorHoldHint => 'Hold a colour to add details.';
+
+  @override
+  String logIndoorDetailsTitle(String colour, String kind) {
+    return '$colour, $kind';
+  }
+
+  @override
+  String logIndoorDetailsLabel(String colour, String wall) {
+    return 'Details for $colour on $wall';
+  }
+
+  @override
+  String get logIndoorAddDetails => 'Add details';
+
+  @override
+  String get logIndoorResult => 'Result';
+
+  @override
+  String get logIndoorResultTopped => 'Topped';
+
+  @override
+  String get logIndoorResultClean => 'Topped clean';
+
+  @override
+  String get logIndoorResultRests => 'Topped with rests';
+
+  @override
+  String get logIndoorRestsWhy =>
+      'You rested on the rope, so it counts as a try, not a send. It stays a project until you climb it clean.';
+
+  @override
+  String get logIndoorMyGrade => 'Your grade';
+
+  @override
+  String get logIndoorMyGradeHint =>
+      'Leave it empty if it felt like the gym\'s grade.';
+
+  @override
+  String get logIndoorAngle => 'Angle';
+
+  @override
+  String get logIndoorAngleFromWall =>
+      'From the wall. Change it if this climb is steeper or flatter.';
+
+  @override
+  String get logIndoorHolds => 'Main holds';
+
+  @override
+  String get logIndoorMovement => 'Movement';
+
+  @override
+  String get logIndoorStyleNote =>
+      'Holds and movement feed your style profile, so you can see what you send and what you avoid.';
+
+  @override
+  String get logIndoorBeta => 'Beta';
+
+  @override
+  String get logIndoorBetaHint =>
+      'Heel hook on the volume, then the left crimp';
+
+  @override
+  String get logIndoorBetaNote => 'Only you see beta.';
+
+  @override
+  String get logIndoorRemoveClimb => 'Remove climb';
+
+  @override
+  String get logIndoorDone => 'Done';
 
   @override
   String get logIndoorProjects => 'Your projects here';

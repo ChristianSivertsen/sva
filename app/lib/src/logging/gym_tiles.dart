@@ -47,12 +47,20 @@ class GymTileButton extends StatelessWidget {
     required this.tile,
     required this.semanticLabel,
     required this.onTap,
+    this.onLongPress,
+    this.longPressHint,
     super.key,
   });
 
   final GymTile tile;
   final String semanticLabel;
   final VoidCallback onTap;
+
+  /// Logs it and opens its details.
+  final VoidCallback? onLongPress;
+
+  /// What [onLongPress] does, for screen readers.
+  final String? longPressHint;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +83,8 @@ class GymTileButton extends StatelessWidget {
       button: true,
       label: semanticLabel,
       onTap: onTap,
+      onLongPress: onLongPress,
+      onLongPressHint: longPressHint,
       excludeSemantics: true,
       child: Material(
         color: fill,
@@ -84,6 +94,7 @@ class GymTileButton extends StatelessWidget {
         ),
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           customBorder: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(SvaRadius.card),
           ),

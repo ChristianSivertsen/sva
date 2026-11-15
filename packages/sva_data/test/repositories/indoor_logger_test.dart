@@ -1,4 +1,4 @@
-import 'package:sva_core/sva_core.dart' show AscentStyle;
+import 'package:sva_core/sva_core.dart' show AscentStyle, AttributeLevel;
 import 'package:sva_data/sva_data.dart';
 import 'package:test/test.dart';
 
@@ -267,5 +267,86 @@ void main() {
       gradeSystem: 'font',
       wall: 'Cave',
     ));
+  });
+
+  test("M3-8: a climb's holds, movement and beta are saved with it", () async {
+    // Seeded grades have ids made from their system and label.
+    String grade(String system, String label) => seedId('grade:$system:$label');
+    final font6a = grade('font', '6A');
+    final id = await logger.logIndoor(
+      draft(
+        '2026-11-03',
+        [IndoorRouteDraft(wallId: cave, colourId: blue, angle: 'angle.roof')],
+        [
+          IndoorClimbDraft(
+            route: 0,
+            style: AscentStyle.flash,
+            tries: 1,
+            ascentType: 'boulder',
+            personalGradeId: font6a,
+            holds: const ['hold.crimp', 'hold.volume'],
+            movement: const ['movement.dyno'],
+            beta: ' Heel hook on the volume ',
+          ),
+        ],
+      ),
+      userId: 'me',
+    );
+    final ascent = await (db.select(
+      db.ascents,
+    )..where((a) => a.sessionId.equals(id))).getSingle();
+    expect(ascent.personalGradeId, font6a);
+    final values = await AttributeRepository(db)
+        .valuesAt(AttributeLevel.ascent, ascent.id);
+    expect(
+      values['climb_hold'],
+      unorderedEquals(['hold.crimp', 'hold.volume']),
+    );
+    expect(values['movement'], ['movement.dyno']);
+    final beta = await db.select(db.ascentBeta).getSingle();
+    expect(
+      (beta.ascentId, beta.betaNotes),
+      (ascent.id, 'Heel hook on the volume'),
+    );
+    final route = await (db.select(
+      db.routes,
+    )..where((r) => r.id.equals(ascent.routeId))).getSingle();
+    expect(route.angle, 'angle.roof', reason: 'steeper than the wall');
+
+    // Each is checked first: nothing is saved otherwise.
+    final before = await db.select(db.ascents).get();
+    Future<void> log(IndoorClimbDraft climb) => logger.logIndoor(
+      draft(
+        '2026-11-04',
+        [IndoorRouteDraft(wallId: cave, colourId: blue)],
+        [climb],
+      ),
+      userId: 'me',
+    );
+    IndoorClimbDraft flash({
+      List<String> holds = const [],
+      List<String> movement = const [],
+      String? beta,
+      String? grade,
+    }) => IndoorClimbDraft(
+      route: 0,
+      style: AscentStyle.flash,
+      tries: 1,
+      ascentType: 'boulder',
+      holds: holds,
+      movement: movement,
+      beta: beta,
+      personalGradeId: grade,
+    );
+    final nor6 = grade('nor', '6');
+    for (final bad in [
+      flash(holds: const ['hold.undercling']),
+      flash(movement: const ['movement.crimpy']),
+      flash(beta: 'x' * (maxBetaLength + 1)),
+      flash(grade: nor6),
+    ]) {
+      await expectLater(log(bad), throwsArgumentError);
+    }
+    expect(await db.select(db.ascents).get(), hasLength(before.length));
   });
 }

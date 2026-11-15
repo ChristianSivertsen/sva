@@ -3,18 +3,28 @@ import 'package:sva_core/src/ascents/gym_projects.dart';
 
 /// A gym route climbed in a session, before it is saved: on a wall, of a
 /// kind (`boulder` or `rope`), with a colour or a grade (both `null` in an
-/// ungraded gym). Two taps with the same key may be the same climb.
+/// ungraded gym), at an `angle` (an `angle.*` key, the wall's unless the
+/// climb is steeper or flatter). Two taps with the same key may be the same
+/// climb.
 typedef GymRouteKey = ({
   String wallId,
   String kind,
   String? colourId,
   String? gradeId,
+  String? angle,
 });
 
 /// One tap in the gym log: on `route` (an index into
-/// [GymSessionLog.routes]), topped or not, after `tries` tries, and how on
-/// a rope (`lead` or `toprope`, `null` for a boulder).
-typedef GymTapEntry = ({int route, bool topped, int tries, String? ropeType});
+/// [GymSessionLog.routes]), topped or not, after `tries` tries, how on a
+/// rope (`lead` or `toprope`, `null` for a boulder), and whether you
+/// `rested` on the rope on the way up, which makes a top a try, not a send.
+typedef GymTapEntry = ({
+  int route,
+  bool topped,
+  bool rested,
+  int tries,
+  String? ropeType,
+});
 
 /// Most tries one tap can count; more is a typo.
 const maxTriesPerTap = 99;
@@ -135,7 +145,7 @@ final class GymSessionLog {
             routeIds.indexOf(p.id) != entry.route &&
             !_sentProject(p.id))
           (kind: GymMatchKind.project, route: null, pastId: p.id),
-      if (entry.topped)
+      if (_isSend(entry))
         for (final (i, r) in routes.indexed.toList().reversed)
           if (i != entry.route && r == key && _sent(i))
             (kind: GymMatchKind.sentToday, route: i, pastId: null),
@@ -174,11 +184,46 @@ final class GymSessionLog {
     );
   }
 
-  /// Changes entry [index]: topped or not, tries (1 to [maxTriesPerTap]),
-  /// and the rope type for a rope climb.
+  /// Puts entry [index] on wall [wallId] (of the same kind) at [angle]. A
+  /// climb first logged in this session with no other entry is just
+  /// corrected. One tried before keeps its route: another wall or angle
+  /// means it was another climb, logged as a first try there.
+  GymSessionLog moveToWall(int index, String wallId, {required String? angle}) {
+    final e = entries[index];
+    final old = routes[e.route];
+    final key = (
+      wallId: wallId,
+      kind: old.kind,
+      colourId: old.colourId,
+      gradeId: old.gradeId,
+      angle: angle,
+    );
+    if (key == old) return this;
+    if (isFresh(index)) {
+      return GymSessionLog._(
+        [
+          for (final (i, r) in routes.indexed)
+            if (i == e.route) key else r,
+        ],
+        routeIds,
+        entries,
+        past,
+      );
+    }
+    return _with(
+      [...routes, key],
+      [...routeIds, null],
+      _replace(index, _onRoute(e, routes.length, tries: 1)),
+    );
+  }
+
+  /// Changes entry [index]: topped or not, rested on the rope or not (rope
+  /// climbs only), tries (1 to [maxTriesPerTap]), and the rope type for a
+  /// rope climb. A climb that isn't topped isn't rested either.
   GymSessionLog update(
     int index, {
     bool? topped,
+    bool? rested,
     int? tries,
     String? ropeType,
   }) {
@@ -189,12 +234,17 @@ final class GymSessionLog {
     if (ropeType != null && e.ropeType == null) {
       throw ArgumentError.value(ropeType, 'ropeType', 'not a rope climb');
     }
+    if ((rested ?? false) && e.ropeType == null) {
+      throw ArgumentError.value(rested, 'rested', 'not a rope climb');
+    }
+    final isTopped = topped ?? e.topped;
     return GymSessionLog._(
       routes,
       routeIds,
       _replace(index, (
         route: e.route,
-        topped: topped ?? e.topped,
+        topped: isTopped,
+        rested: isTopped && (rested ?? e.rested),
         tries: tries ?? e.tries,
         ropeType: ropeType ?? e.ropeType,
       )),
@@ -226,7 +276,7 @@ final class GymSessionLog {
               boulder: routes[e.route].kind == 'boulder',
               gym: true,
             ),
-            topped: e.topped,
+            topped: _isSend(e),
             tries: e.tries,
           );
           logs[e.route].add(ascent);
@@ -235,7 +285,10 @@ final class GymSessionLog {
     ];
   }
 
-  bool _sent(int route) => entries.any((e) => e.route == route && e.topped);
+  /// Topped without resting: a send.
+  static bool _isSend(GymTapEntry e) => e.topped && !e.rested;
+
+  bool _sent(int route) => entries.any((e) => e.route == route && _isSend(e));
 
   bool _sentProject(String id) {
     final route = routeIds.indexOf(id);
@@ -263,6 +316,7 @@ final class GymSessionLog {
       (
         route: route ?? routes.length,
         topped: true,
+        rested: false,
         tries: 1,
         ropeType: ropeType,
       ),
@@ -298,6 +352,7 @@ final class GymSessionLog {
   static GymTapEntry _onRoute(GymTapEntry e, int route, {int? tries}) => (
     route: route,
     topped: e.topped,
+    rested: e.rested,
     tries: tries ?? e.tries,
     ropeType: e.ropeType,
   );

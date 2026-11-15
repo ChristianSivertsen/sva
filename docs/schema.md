@@ -236,7 +236,7 @@ Columns: `id`, `key` (unique on the server), `name`, `grade_type`, `sort`, `regi
 
 A trad route might have `free_route` E3 + 5c, `danger` R and `commitment` III. An alpine route might have `alpine` D, `free_route` 5+ and `ice` WI3.
 
-**attribute_defs**: shared definitions for the long tail of details. `id`, `key` (unique on the server), `level` (`area`, `route`, `pitch`, `ascent`, `session`), `value_type` (`single`, `multi`, `number`, `bool`), `value_keys` (json array of allowed value keys; `values` is a reserved word in SQL), `sort`. Seeded with features (`feature.face`, `feature.finger_crack`, `.hand_crack`, `.offwidth`, `.chimney`, `.corner`, `.arete`, `.tufa`, `.ice_pillar`, `.ice_curtain`, `.mixed_dry_tool`), holds, ascent tags (`tag.pumpy` …), conditions.
+**attribute_defs**: shared definitions for the long tail of details. `id`, `key` (unique on the server), `level` (`area`, `route`, `pitch`, `ascent`, `session`), `value_type` (`single`, `multi`, `number`, `bool`), `value_keys` (json array of allowed value keys; `values` is a reserved word in SQL), `sort`. Seeded with features (`feature.face`, `feature.finger_crack`, `.hand_crack`, `.offwidth`, `.chimney`, `.corner`, `.arete`, `.tufa`, `.ice_pillar`, `.ice_curtain`, `.mixed_dry_tool`), route holds (`hold.crimp` …), ascent tags (`tag.pumpy` …), a gym climb's main holds (`climb_hold`: `hold.crimp`, `.sloper`, `.pinch`, `.jug`, `.pocket`, `.volume`) and movement (`movement`: `movement.powerful`, `.technical`, `.balance`, `.coordination`, `.dyno`, `.compression`), conditions. A climb's holds are `climb_hold`, not `hold`, because `hold` is the route's and ids are made from the key.
 
 **route_attributes**: `id`, `route_id`, `attribute_key`, `value` (key, number or bool as text). One row per value, so multi-value attributes have several rows; unique on the three columns on the server.
 
@@ -343,7 +343,7 @@ Common filters (discipline, angle, protection, rock type) are typed columns. Att
 | falls, rests | integer | |
 | notes | text | |
 
-**ascent_attributes**: `id`, `owner_id`, `ascent_id`, `attribute_key`, `value`. Holds tags and other ascent details.
+**ascent_attributes**: `id`, `owner_id`, `ascent_id`, `attribute_key`, `value`. Holds tags, a gym climb's main holds and movement, and other ascent details.
 
 **ascent_gear**: `id`, `owner_id`, `ascent_id`, `gear_piece_id`, `count`, `borrowed_from` (uuid → profiles or null). The rack taken on that climb.
 

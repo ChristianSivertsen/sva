@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sva/src/app.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/logging/gym_climb_details.dart';
 import 'package:sva/src/logging/gym_tiles.dart';
 import 'package:sva/src/logging/here.dart';
 import 'package:sva/src/shell/app_shell.dart';
 import 'package:sva/src/shell/log_sheet.dart';
-import 'package:sva_core/sva_core.dart' show AscentStyle, gradeSystems;
+import 'package:sva_core/sva_core.dart' show AscentStyle, font, gradeSystems;
 import 'package:sva_data/sva_data.dart';
 
 /// Records the indoor session the log saves. Saving and its checks are
@@ -57,6 +58,8 @@ GymProject _project(
     status: 'open',
     gymWallId: 'cave',
     gymColourGradeId: 'blue',
+    // A gym route starts with its wall's angle.
+    angle: 'angle.overhang',
   ),
   tries: tries,
   lastTried: lastTried,
@@ -480,5 +483,142 @@ void main() {
     await tap(tester, inSheet(find.text("Didn't top")));
     expect(inSheet(find.text('Your projects here')), findsOneWidget);
     expect(gone, findsNothing);
+  });
+
+  testWidgets('M3-8: the details sheet fills in a climb, opened by holding '
+      'a tile or from the list', (tester) async {
+    // Blue spans Font 5+ to 6B, so your grade is offered around 6A.
+    await open(
+      tester,
+      colours: [
+        _colours.first,
+        _colours.last.copyWith(
+          boulderMinScore: Value(font.parse('5+')!.scoreLow),
+          boulderMaxScore: Value(font.parse('6B')!.scoreHigh),
+        ),
+      ],
+    );
+    final sheet = find.byType(GymClimbDetails);
+    Future<void> inDetails(String label) =>
+        tap(tester, find.descendant(of: sheet, matching: find.text(label)));
+
+    await tester.longPress(tile('Blue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Blue, boulder'), findsOneWidget);
+    expect(
+      find.text(
+        'From the wall. Change it if this climb is steeper or flatter.',
+      ),
+      findsOneWidget,
+    );
+    await inDetails('6A');
+    await inDetails('Roof');
+    // A climb always has an angle: tapping it again keeps it.
+    await inDetails('Roof');
+    await inDetails('Crimps');
+    await inDetails('Dyno');
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextFormField)),
+      'Heel hook on the volume',
+    );
+    await inDetails('Done');
+    expect(sheet, findsNothing);
+
+    // From the list, the same details again.
+    tester.semantics.tap(find.semantics.byLabel('Details for Blue on Cave'));
+    await tester.pumpAndSettle();
+    expect(find.text('Heel hook on the volume'), findsOneWidget);
+    await inDetails('Done');
+    await tap(tester, inSheet(find.text('Save session')));
+
+    final saved = logger.saved!;
+    expect(saved.routes.single.angle, 'angle.roof');
+    final climb = saved.climbs.single;
+    expect(climb.personalGradeId, seedId('grade:font:6A'));
+    expect(climb.holds, ['hold.crimp']);
+    expect(climb.movement, ['movement.dyno']);
+    expect(climb.beta, 'Heel hook on the volume');
+  });
+
+  testWidgets('M3-8: a rope climb topped with rests shows as a try', (
+    tester,
+  ) async {
+    await open(tester);
+    await tap(tester, inSheet(find.text('Rope')));
+    await tap(tester, tile('Blue'));
+    tester.semantics.tap(
+      find.semantics.byLabel('Details for Blue on Main wall'),
+    );
+    await tester.pumpAndSettle();
+    final sheet = find.byType(GymClimbDetails);
+    await tap(
+      tester,
+      find.descendant(of: sheet, matching: find.text('Topped with rests')),
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.text('Attempt')),
+      findsOneWidget,
+    );
+    // Removing it from details leaves the session empty.
+    await tap(
+      tester,
+      find.descendant(of: sheet, matching: find.text('Remove climb')),
+    );
+    expect(inSheet(find.text('Save session')), findsNothing);
+  });
+
+  testWidgets('M3-8: details stay with their climb, and moving the latest '
+      'climb moves the log', (tester) async {
+    await open(
+      tester,
+      colours: [
+        _colours.first,
+        _colours.last.copyWith(
+          boulderMinScore: Value(font.parse('5+')!.scoreLow),
+          boulderMaxScore: Value(font.parse('6B')!.scoreHigh),
+        ),
+      ],
+    );
+    final sheet = find.byType(GymClimbDetails);
+    Future<void> inDetails(String label) =>
+        tap(tester, find.descendant(of: sheet, matching: find.text(label)));
+    Future<void> details(String label) async {
+      tester.semantics.tap(find.semantics.byLabel(label));
+      await tester.pumpAndSettle();
+    }
+
+    // A blue with beta, then a green: removing the blue takes its beta
+    // with it.
+    await tap(tester, tile('Blue'));
+    await details('Details for Blue on Cave');
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextFormField)),
+      'Blue beta',
+    );
+    await inDetails('Done');
+    await tap(tester, tile('Green'));
+    await tap(tester, inSheet(find.byTooltip('Remove Blue')));
+
+    // The green was on the board, not the cave: the log follows it there.
+    await details('Details for Green on Cave');
+    await inDetails('Board');
+    await inDetails('Done');
+    await tap(tester, tile('Blue'));
+
+    // A grade picked for a climb you then didn't top is dropped.
+    await details('Details for Blue on Board');
+    await inDetails('6A');
+    await inDetails("Didn't top");
+    await inDetails('Done');
+    await tap(tester, inSheet(find.text('Save session (2 climbs)')));
+
+    final saved = logger.saved!;
+    expect(
+      [for (final r in saved.routes) (r.wallId, r.angle)],
+      [('board', null), ('board', null)],
+      reason: "the wall's own angle is not saved again",
+    );
+    expect([for (final c in saved.climbs) c.beta], ['', '']);
+    expect(saved.climbs.last.personalGradeId, isNull);
   });
 }

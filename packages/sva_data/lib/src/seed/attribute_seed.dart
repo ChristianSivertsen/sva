@@ -159,6 +159,36 @@ const attributeSeed = <AttributeDef>[
     ],
     sort: 20,
   ),
+  // A gym climb's main holds and movement, for the style profile (M3-8).
+  // A route's holds are its own 'hold'; these are how you climbed it.
+  AttributeDef(
+    key: 'climb_hold',
+    level: AttributeLevel.ascent,
+    valueType: AttributeValueType.multi,
+    valueKeys: [
+      'hold.crimp',
+      'hold.sloper',
+      'hold.pinch',
+      'hold.jug',
+      'hold.pocket',
+      'hold.volume',
+    ],
+    sort: 30,
+  ),
+  AttributeDef(
+    key: 'movement',
+    level: AttributeLevel.ascent,
+    valueType: AttributeValueType.multi,
+    valueKeys: [
+      'movement.powerful',
+      'movement.technical',
+      'movement.balance',
+      'movement.coordination',
+      'movement.dyno',
+      'movement.compression',
+    ],
+    sort: 40,
+  ),
   // Session
   AttributeDef(
     key: 'conditions',

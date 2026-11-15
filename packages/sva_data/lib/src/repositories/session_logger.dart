@@ -96,14 +96,24 @@ final class SessionEdit {
 }
 
 /// One gym route in an indoor session: one logged before ([routeId]), or
-/// a new one on a wall, with a colour or a grade as the gym grades.
+/// a new one on a wall, with a colour or a grade as the gym grades, and an
+/// [angle] when it differs from the wall's.
 final class IndoorRouteDraft {
-  const new({this.routeId, this.wallId, this.colourId, this.gradeId});
+  const new({
+    this.routeId,
+    this.wallId,
+    this.colourId,
+    this.gradeId,
+    this.angle,
+  });
 
   final String? routeId;
   final String? wallId;
   final String? colourId;
   final String? gradeId;
+
+  /// An `angle.*` value key; only for a new route.
+  final String? angle;
 }
 
 /// One climb in an indoor session, on [route] (an index into
@@ -115,6 +125,10 @@ final class IndoorClimbDraft {
     required this.style,
     required this.tries,
     required this.ascentType,
+    this.personalGradeId,
+    this.holds = const [],
+    this.movement = const [],
+    this.beta,
   });
 
   final int route;
@@ -124,6 +138,17 @@ final class IndoorClimbDraft {
   /// One of `indoorAscentTypes`: `boulder` on a boulder wall, `lead` or
   /// `toprope` on a rope wall.
   final String ascentType;
+
+  /// Your own grade for it, of the route's grade type.
+  final String? personalGradeId;
+
+  /// The main holds (`climb_hold` values, such as `hold.crimp`) and the
+  /// movement (`movement` values) for the style profile.
+  final List<String> holds;
+  final List<String> movement;
+
+  /// How you climbed it. Only you see beta (docs/schema.md, ascent_beta).
+  final String? beta;
 }
 
 /// An indoor session as the gym log fills it in.
@@ -186,6 +211,7 @@ const maxPartners = 20;
 const maxTitleLength = 120;
 const maxDescriptionLength = 2000;
 const maxPartnerNameLength = 80;
+const maxBetaLength = 2000;
 
 /// Saves an outdoor session with all its climbs in one transaction, so a
 /// half-logged session never reaches sync. Everything is checked here, at
@@ -278,6 +304,9 @@ class SessionLogger {
       if ((route.routeId == null) == (route.wallId == null)) {
         throw ArgumentError.value(i, 'routes', 'a route or a wall, not both');
       }
+      if (route.routeId != null && route.angle != null) {
+        throw ArgumentError.value(i, 'routes', 'an angle for a new route');
+      }
     }
     // Each route once, so its climbs are checked against each other.
     final existing = [for (final r in draft.routes) ?r.routeId];
@@ -291,6 +320,29 @@ class SessionLogger {
       if (!indoorAscentTypes.contains(climb.ascentType)) {
         throw ArgumentError.value(climb.ascentType, 'ascentType');
       }
+    }
+    final defs = {
+      for (final d in await _attributes.definitions(
+        level: AttributeLevel.ascent,
+      ))
+        d.key: d,
+    };
+    final betas = <String?>[];
+    for (final climb in draft.climbs) {
+      for (final (key, values) in [
+        ('climb_hold', climb.holds),
+        ('movement', climb.movement),
+      ]) {
+        if (values.isNotEmpty && !(defs[key]?.accepts(values) ?? false)) {
+          throw ArgumentError.value(values, key);
+        }
+      }
+      final beta = climb.beta?.trim();
+      if (beta != null && beta.length > maxBetaLength) {
+        // The length, not the beta: errors may end up in logs one day.
+        throw ArgumentError.value(beta.length, 'beta', 'too long');
+      }
+      betas.add(beta == null || beta.isEmpty ? null : beta);
     }
 
     return await db.transaction(() async {
@@ -320,6 +372,7 @@ class SessionLogger {
                 setOn: draft.localDate,
                 colourId: route.colourId,
                 gradeId: route.gradeId,
+                angle: route.angle,
               ),
               userId: userId,
             );
@@ -358,6 +411,9 @@ class SessionLogger {
         ).check(ascent);
         if (issues.isNotEmpty) throw ClimbRejected(i, issues);
         logs[climb.route].add(ascent);
+        if (climb.personalGradeId case final grade?) {
+          await _checkGrade(grade, route.id);
+        }
       }
 
       final sessionId = await _sessions.create(
@@ -372,7 +428,7 @@ class SessionLogger {
         userId: userId,
       );
       for (final (i, climb) in draft.climbs.indexed) {
-        await _ascents.create(
+        final ascentId = await _ascents.create(
           AscentsCompanion(
             sessionId: Value(sessionId),
             routeId: Value(routes[climb.route].id),
@@ -380,9 +436,37 @@ class SessionLogger {
             ascentType: Value(climb.ascentType),
             style: Value(climb.style.name),
             tries: Value(climb.tries),
+            personalGradeId: Value(climb.personalGradeId),
           ),
           userId: userId,
         );
+        for (final (key, values) in [
+          ('climb_hold', climb.holds),
+          ('movement', climb.movement),
+        ]) {
+          if (values.isEmpty) continue;
+          await _attributes.setAscentAttribute(
+            ascentId,
+            key,
+            values,
+            userId: userId,
+          );
+        }
+        if (betas[i] case final beta?) {
+          final now = clock();
+          await db
+              .into(db.ascentBeta)
+              .insert(
+                AscentBetaCompanion.insert(
+                  id: newId(),
+                  createdAt: now,
+                  updatedAt: now,
+                  ownerId: userId,
+                  ascentId: ascentId,
+                  betaNotes: beta,
+                ),
+              );
+        }
       }
       return sessionId;
     });
