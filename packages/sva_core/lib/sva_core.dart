@@ -8,6 +8,7 @@ export 'src/ascents/gym_summary.dart';
 export 'src/attributes/attribute_def.dart';
 export 'src/attributes/inheritance.dart';
 export 'src/grades/colour_grades.dart';
+export 'src/grades/grade_bands.dart';
 export 'src/grades/grade_system.dart';
 export 'src/grades/grade_tables.dart';
 export 'src/places/nearest.dart';
