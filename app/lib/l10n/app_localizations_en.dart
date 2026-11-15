@@ -1390,4 +1390,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logFinishSave => 'Save session';
+
+  @override
+  String logFinishAnd(String first, String second) {
+    return '$first and $second';
+  }
 }

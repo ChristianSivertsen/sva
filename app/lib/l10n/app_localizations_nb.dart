@@ -1392,4 +1392,9 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get logFinishSave => 'Lagre økta';
+
+  @override
+  String logFinishAnd(String first, String second) {
+    return '$first og $second';
+  }
 }

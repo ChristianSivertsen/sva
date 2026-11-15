@@ -968,5 +968,16 @@
     }
   },
   "logFinishVisibility": "Who can see it",
-  "logFinishSave": "Save session"
+  "logFinishSave": "Save session",
+  "logFinishAnd": "{first} and {second}",
+  "@logFinishAnd": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -60,8 +60,8 @@ class GymFinishSheet extends StatefulWidget {
   /// Who can see it at first, from settings.
   final String visibility;
 
-  /// Saves the session; `false` when it wasn't saved.
-  final Future<bool> Function(GymFinishChoices choices) onSave;
+  /// Saves the session. Returns why it wasn't saved, or `null` once it is.
+  final Future<String?> Function(GymFinishChoices choices) onSave;
   final VoidCallback onClose;
 
   @override
@@ -74,6 +74,10 @@ class _GymFinishSheetState extends State<GymFinishSheet> {
   late String _visibility = widget.visibility;
   var _saving = false;
 
+  /// Why the last save failed, shown above Save: a snackbar would be
+  /// hidden behind this sheet.
+  String? _error;
+
   @override
   void dispose() {
     _title.dispose();
@@ -82,14 +86,22 @@ class _GymFinishSheetState extends State<GymFinishSheet> {
   }
 
   Future<void> _save() async {
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     final title = _title.text.trim();
-    final saved = await widget.onSave((
+    final error = await widget.onSave((
       title: title.isEmpty ? null : title,
       partners: _partners.text.split(','),
       visibility: _visibility,
     ));
-    if (!saved && mounted) setState(() => _saving = false);
+    if (error != null && mounted) {
+      setState(() {
+        _saving = false;
+        _error = error;
+      });
+    }
   }
 
   @override
@@ -203,7 +215,7 @@ class _GymFinishSheetState extends State<GymFinishSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: SvaSpace.sm,
                     children: [
-                      Text(l10n.logFinishFilledIn.toUpperCase(), style: muted),
+                      Text(l10n.logFinishFilledIn, style: muted),
                       Expanded(child: Text(widget.filledIn, style: text.label)),
                     ],
                   ),
@@ -258,9 +270,23 @@ class _GymFinishSheetState extends State<GymFinishSheet> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.all(SvaSpace.md),
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(l10n.logFinishSave),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: SvaSpace.xs,
+                children: [
+                  if (_error case final error?)
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        error,
+                        style: text.caption.copyWith(color: colors.danger),
+                      ),
+                    ),
+                  FilledButton(
+                    onPressed: _saving ? null : _save,
+                    child: Text(l10n.logFinishSave),
+                  ),
+                ],
               ),
             ),
           ),

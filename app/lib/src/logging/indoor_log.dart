@@ -226,20 +226,25 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     );
   });
 
-  /// Saves the session with what was filled in when finishing; `false`
-  /// when it wasn't saved.
-  Future<bool> _save(
+  /// Saves the session with what was filled in when finishing, live
+  /// until [endAt]. Returns why it wasn't saved, or `null` once it is.
+  Future<String?> _save(
     String gymId,
     GymSetup setup,
     GymFinishChoices choices, {
     required String autoTitle,
+    required DateTime endAt,
   }) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final climbs = _log.climbs;
-    final now = DateTime.now();
-    final startAt = _live ? (_startedAt ?? now) : null;
+    var startAt = _live ? (_startedAt ?? endAt) : null;
     final day = startAt ?? _day;
+    // Left running for over a day: kept on the day it started, without
+    // times that can't be right.
+    if (startAt != null &&
+        endAt.difference(startAt) > const Duration(days: 1)) {
+      startAt = null;
+    }
     try {
       await ref
           .read(sessionLoggerProvider)
@@ -252,7 +257,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
               title: choices.title ?? autoTitle,
               partners: choices.partners,
               startAt: startAt,
-              endAt: startAt == null ? null : now,
+              endAt: startAt == null ? null : endAt,
               routes: [
                 for (final (i, GymRouteKey r) in _log.routes.indexed)
                   if (_log.routeIds[i] case final id?)
@@ -290,16 +295,12 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
             ),
             userId: ref.read(currentUserIdProvider),
           );
-      messenger.showSnackBar(SnackBar(content: Text(l10n.logSaved)));
-      return true;
+      return null;
     } on ClimbRejected catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.logClimbRejected(e.index + 1))),
-      );
+      return l10n.logClimbRejected(e.index + 1);
     } on Object {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.formSaveFailed)));
+      return l10n.formSaveFailed;
     }
-    return false;
   }
 
   /// The other climbs entry [index], shown as [colour], might be, and a
@@ -559,11 +560,19 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
         for (final k in const ['boulder', 'rope'])
           if (s.best[k] case final key?) kindLabel(key),
       ];
-      final autoTitle = [
+      final counts = [
         if (s.boulders > 0) l10n.logFinishBoulders(s.boulders),
         if (s.ropes > 0) l10n.logFinishRoutes(s.ropes),
+      ];
+      final autoTitle = [
+        if (counts case [final a, final b])
+          l10n.logFinishAnd(a, b)
+        else
+          ...counts,
         if (best.isNotEmpty) l10n.logFinishBestOf(best.join(' / ')),
       ].join(' · ');
+      // What the sheet shows is what is saved.
+      final endAt = DateTime.now();
       final day = _live ? today : _day;
       final started = _startedAt;
       unawaited(
@@ -608,9 +617,10 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                     labelOf(key),
                     wallName(key.wallId) ?? '',
                     p.tries,
-                    // Rounded, as a day with a clock change is not 24 hours.
-                    (day.difference(DateTime.parse(p.lastTried)).inHours / 24)
-                        .round(),
+                    // As calendar days, so a clock change doesn't count.
+                    DateTime.utc(day.year, day.month, day.day)
+                        .difference(DateTime.parse('${p.lastTried}T00:00Z'))
+                        .inDays,
                   );
                 }(),
             ],
@@ -639,7 +649,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
             filledIn: [
               setup.gym.name,
               if (_live && started != null)
-                '${time.format(started)}–${time.format(DateTime.now())}'
+                '${time.format(started)}–${time.format(endAt)}'
               else
                 formatDay(l10n, dayOf(_day)),
             ].join(' · '),
@@ -649,17 +659,20 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                 const Settings().defaultVisibility,
             onClose: () => Navigator.pop(sheetContext),
             onSave: (choices) async {
-              final saved = await _save(
+              final messenger = ScaffoldMessenger.of(context);
+              final error = await _save(
                 gymId,
                 setup,
                 choices,
                 autoTitle: autoTitle,
+                endAt: endAt,
               );
-              if (saved) {
+              if (error == null) {
                 if (sheetContext.mounted) Navigator.pop(sheetContext);
                 widget.onSaved();
+                messenger.showSnackBar(SnackBar(content: Text(l10n.logSaved)));
               }
-              return saved;
+              return error;
             },
           ),
         ),

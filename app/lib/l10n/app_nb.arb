@@ -309,5 +309,6 @@
   "logFinishRoutes": "{count, plural, =1{1 rute} other{{count} ruter}}",
   "logFinishBestOf": "beste {grades}",
   "logFinishVisibility": "Hvem kan se den",
-  "logFinishSave": "Lagre økta"
+  "logFinishSave": "Lagre økta",
+  "logFinishAnd": "{first} og {second}"
 }

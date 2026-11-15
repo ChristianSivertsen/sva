@@ -18,11 +18,15 @@ class _FakeLogger extends SessionLogger {
 
   IndoorSessionDraft? saved;
 
+  /// Thrown instead of saving, when set.
+  Exception? failWith;
+
   @override
   Future<String> logIndoor(
     IndoorSessionDraft draft, {
     required String userId,
   }) async {
+    if (failWith case final e?) throw e;
     saved = draft;
     return 'session';
   }
@@ -687,7 +691,7 @@ void main() {
       find.bySemanticsLabel('Blue R: 0 flash, 0 redpoint, 0 repeat, 1 attempt'),
       findsOneWidget,
     );
-    const autoTitle = '2 boulders · 1 route · best Blue, boulder';
+    const autoTitle = '2 boulders and 1 route · best Blue, boulder';
     expect(find.text('Leave it empty to use “$autoTitle”.'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, 'Partners'),
@@ -705,5 +709,28 @@ void main() {
     expect(saved.endAt!.isBefore(saved.startAt!), isFalse);
     expect(find.text('Session saved'), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('M3-8: a failed save keeps the finish sheet open and says '
+      'why; a title is saved as typed', (tester) async {
+    await open(tester);
+    await tap(tester, tile('Blue'));
+    await tap(tester, inSheet(find.text('Finish')));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Title'),
+      'Board night',
+    );
+    logger.failWith = Exception('disk full');
+    await tap(tester, find.text('Save session'));
+    expect(find.text('Finish session'), findsOneWidget);
+    expect(
+      find.text("Couldn't save. Check the fields and try again."),
+      findsOneWidget,
+    );
+
+    logger.failWith = null;
+    await tap(tester, find.text('Save session'));
+    expect(logger.saved!.title, 'Board night');
+    expect(find.text('Finish session'), findsNothing);
   });
 }

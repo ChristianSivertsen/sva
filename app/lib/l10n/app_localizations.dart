@@ -1963,6 +1963,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save session'**
   String get logFinishSave;
+
+  /// No description provided for @logFinishAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String logFinishAnd(String first, String second);
 }
 
 class _AppLocalizationsDelegate
