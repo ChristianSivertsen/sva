@@ -45,12 +45,10 @@ class FeedCard extends ConsumerWidget {
       final id? when indoor => ref.watch(placeNameProvider(id)).value,
       _ => null,
     };
-    // Only loaded labels, so the wall waits for all of them.
     final labels = {
       if (indoor)
         for (final id in {for (final c in climbs) c.routeId})
-          if (ref.watch(gymRouteLabelProvider(id)) case AsyncData(:final value))
-            id: value,
+          id: ref.watch(gymRouteLabelProvider(id)).value,
     };
 
     final crags = {for (final c in climbs) ?hits[c.routeId]?.crag};
@@ -82,15 +80,7 @@ class FeedCard extends ConsumerWidget {
       note: weather == null ? null : weatherLine(l10n, weather),
       title: session.title,
       description: session.description,
-      picture: indoor
-          ? sessionWall(
-              context,
-              sessionId: session.id,
-              gym: gym ?? l10n.feedSetting(session.setting),
-              climbs: climbs,
-              labels: labels,
-            )
-          : null,
+      picture: indoor ? SessionWall(session: session, climbs: climbs) : null,
       climbs: [
         for (final climb in shown)
           if (labels[climb.routeId] case final label?)

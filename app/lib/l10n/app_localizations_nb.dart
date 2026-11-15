@@ -1417,6 +1417,6 @@ class AppLocalizationsNb extends AppLocalizations {
       other: '$count klatringer',
       one: '1 klatring',
     );
-    return 'Vegg på $gym med $_temp0, tak i fargene som ble klatret';
+    return 'Vegg på $gym med $_temp0';
   }
 }

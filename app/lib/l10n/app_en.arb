@@ -992,7 +992,7 @@
       }
     }
   },
-  "wallSemantics": "Wall at {gym} with {count, plural, =1{1 climb} other{{count} climbs}}, holds in the colours climbed",
+  "wallSemantics": "Wall at {gym} with {count, plural, =1{1 climb} other{{count} climbs}}",
   "@wallSemantics": {
     "description": "Screen reader label for an indoor session's wall image.",
     "placeholders": {

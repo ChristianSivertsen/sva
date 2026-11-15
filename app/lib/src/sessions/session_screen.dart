@@ -152,27 +152,6 @@ class _SessionDetail extends ConsumerWidget {
     final climbs = ref.watch(sessionAscentsProvider(session.id)).value;
     final partners = ref.watch(sessionPartnersProvider(session.id)).value;
     final day = formatDay(l10n, session.localDate);
-    final wall = switch (climbs) {
-      final climbs? when session.setting == 'indoor' => sessionWall(
-        context,
-        sessionId: session.id,
-        gym:
-            switch (session.areaId) {
-              final id? => ref.watch(placeNameProvider(id)).value,
-              null => null,
-            } ??
-            l10n.feedSetting(session.setting),
-        climbs: climbs,
-        labels: {
-          for (final id in {for (final c in climbs) c.routeId})
-            if (ref.watch(gymRouteLabelProvider(id)) case AsyncData(
-              :final value,
-            ))
-              id: value,
-        },
-      ),
-      _ => null,
-    };
     final facts = [
       if (session.title != null) day,
       if (session.conditions case final c?)
@@ -186,7 +165,10 @@ class _SessionDetail extends ConsumerWidget {
         SvaSpace.xxl,
       ),
       children: [
-        if (wall != null) ...[wall, const SizedBox(height: SvaSpace.md)],
+        if (climbs case final climbs? when session.setting == 'indoor') ...[
+          SessionWall(session: session, climbs: climbs),
+          const SizedBox(height: SvaSpace.md),
+        ],
         Semantics(
           header: true,
           child: Text(session.title ?? day, style: text.title),

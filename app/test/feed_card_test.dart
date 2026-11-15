@@ -96,7 +96,11 @@ Future<ProviderContainer> _start(
       ),
       sessionWeatherProvider.overrideWith((ref, id) => Stream.value(null)),
       sessionTagsProvider.overrideWith((ref, id) async => tags[id] ?? []),
-      sessionProvider.overrideWith((ref, id) => Stream.value(null)),
+      sessionProvider.overrideWith(
+        (ref, id) =>
+            sessions(1)
+                .map((list) => list.where((s) => s.id == id).firstOrNull),
+      ),
       gymRouteLabelProvider.overrideWith((ref, id) async => gymRoutes[id]),
       placeNameProvider.overrideWith(
         (ref, id) async => id == 'g1' ? 'Gnisten' : null,
@@ -113,7 +117,10 @@ Future<ProviderContainer> _start(
 
 /// A session at Gnisten with a blue on the cave and a graded 6A on the
 /// board.
-Future<void> _startGym(WidgetTester tester) async {
+Future<void> _startGym(
+  WidgetTester tester, {
+  Map<String, GymRouteLabel> more = const {},
+}) async {
   final session = Session(
     id: 'gym',
     createdAt: DateTime.utc(2026, 11),
@@ -136,9 +143,14 @@ Future<void> _startGym(WidgetTester tester) async {
     tester,
     sessions: (limit) => Stream.value([session]),
     climbs: {
-      'gym': [climb(1, 'blue'), climb(2, 'graded')],
+      'gym': [
+        climb(1, 'blue'),
+        climb(2, 'graded'),
+        for (final (i, id) in more.keys.indexed) climb(3 + i, id),
+      ],
     },
     gymRoutes: {
+      ...more,
       'blue': (
         colour: 'Blue',
         colourHex: '#2F6FD1',
@@ -416,25 +428,54 @@ void main() {
     expect(inCard(find.text('6A')), findsOneWidget);
   });
 
-  testWidgets("M3-9: a gym session card leads with a wall in the session's "
-      'colours', (tester) async {
-    await _startGym(tester);
+  testWidgets('M3-9: a gym session card and page lead with a wall in the '
+      "session's colours", (tester) async {
+    GymRouteLabel plain({String? colourHex}) => (
+      colour: null,
+      colourHex: colourHex,
+      grade: null,
+      gradeSystem: null,
+      gradeType: null,
+      gradeScore: null,
+      wall: null,
+    );
+    await _startGym(
+      tester,
+      more: {
+        'ungraded': plain(),
+        'broken': plain(colourHex: 'red'),
+      },
+    );
     final wall = find.descendant(
       of: find.byType(FeedCard),
       matching: find.byType(SvaGymWall),
     );
     final brightness = Theme.of(tester.element(wall)).brightness;
     // One cluster per climb: the blue in the gym's blue, the 6A in the
-    // shade of its grade.
-    expect(tester.widget<SvaGymWall>(wall).holds, [
+    // shade of its grade, and plain holds for a climb without either or
+    // with a colour that can't be read.
+    final holds = [
       gymColourFromHex('#2F6FD1'),
       gymGradeShade(brightness, 1, 0),
-    ]);
-    expect(find.text('Gnisten · 2 climbs'), findsOneWidget);
+      null,
+      null,
+    ];
+    expect(tester.widget<SvaGymWall>(wall).holds, holds);
+    expect(find.text('Gnisten · 4 climbs'), findsOneWidget);
     // Read out as part of the card, after "Open session".
     expect(
-      find.bySemanticsLabel(RegExp('Wall at Gnisten with 2 climbs')),
+      find.bySemanticsLabel(RegExp('Wall at Gnisten with 4 climbs')),
       findsOneWidget,
     );
+
+    // The session page leads with the same wall.
+    await tester.tap(find.byType(FeedCard));
+    await tester.pumpAndSettle();
+    final page = find.descendant(
+      of: find.byType(SessionScreen),
+      matching: find.byType(SvaGymWall),
+    );
+    expect(tester.widget<SvaGymWall>(page).holds, holds);
+    expect(tester.widget<SvaGymWall>(page).seed, 'gym');
   });
 }

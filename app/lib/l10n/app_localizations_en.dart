@@ -1415,6 +1415,6 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count climbs',
       one: '1 climb',
     );
-    return 'Wall at $gym with $_temp0, holds in the colours climbed';
+    return 'Wall at $gym with $_temp0';
   }
 }

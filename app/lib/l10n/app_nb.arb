@@ -312,5 +312,5 @@
   "logFinishSave": "Lagre økta",
   "logFinishAnd": "{first} og {second}",
   "wallLabel": "{gym} · {count, plural, =1{1 klatring} other{{count} klatringer}}",
-  "wallSemantics": "Vegg på {gym} med {count, plural, =1{1 klatring} other{{count} klatringer}}, tak i fargene som ble klatret"
+  "wallSemantics": "Vegg på {gym} med {count, plural, =1{1 klatring} other{{count} klatringer}}"
 }

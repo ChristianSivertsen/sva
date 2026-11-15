@@ -1979,7 +1979,7 @@ abstract class AppLocalizations {
   /// Screen reader label for an indoor session's wall image.
   ///
   /// In en, this message translates to:
-  /// **'Wall at {gym} with {count, plural, =1{1 climb} other{{count} climbs}}, holds in the colours climbed'**
+  /// **'Wall at {gym} with {count, plural, =1{1 climb} other{{count} climbs}}'**
   String wallSemantics(String gym, int count);
 }
 
