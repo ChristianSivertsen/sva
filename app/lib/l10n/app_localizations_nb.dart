@@ -1266,4 +1266,135 @@ class AppLocalizationsNb extends AppLocalizations {
   @override
   String get logLaterClimbRejected =>
       'En senere klatring på samme rute bygger på denne. Endre eller fjern den klatringen først.';
+
+  @override
+  String logIndoorLive(String time, int minutes) {
+    return 'Live · siden $time · $minutes min';
+  }
+
+  @override
+  String get logIndoorLiveWaiting => 'Live · starter med første klatring';
+
+  @override
+  String get logIndoorPast => 'Tidligere økt';
+
+  @override
+  String get logIndoorLogPast => 'Logg en tidligere økt';
+
+  @override
+  String get logIndoorLogLive => 'Logg live i stedet';
+
+  @override
+  String get logIndoorDay => 'Dag';
+
+  @override
+  String get logIndoorToday => 'I dag';
+
+  @override
+  String get logIndoorYesterday => 'I går';
+
+  @override
+  String get logIndoorOtherDay => 'Annen dag';
+
+  @override
+  String get logIndoorFinish => 'Avslutt';
+
+  @override
+  String get logFinishTitle => 'Avslutt økta';
+
+  @override
+  String get logFinishBack => 'Tilbake til økta';
+
+  @override
+  String get logFinishClimbs => 'Klatringer';
+
+  @override
+  String get logFinishSends => 'Sendt';
+
+  @override
+  String get logFinishFlashes => 'Flash';
+
+  @override
+  String get logFinishOnRope => 'På tau';
+
+  @override
+  String get logFinishBest => 'Beste';
+
+  @override
+  String logFinishProjectSent(String climb, String wall, int tries, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dager etter',
+      one: '1 dag etter',
+      zero: 'samme dag som',
+    );
+    return 'Prosjekt sendt: $climb · $wall · forsøk $tries, $_temp0 forrige forsøk';
+  }
+
+  @override
+  String logFinishBar(
+    String label,
+    int flash,
+    int redpoint,
+    int repeat,
+    int attempt,
+  ) {
+    return '$label: $flash flash, $redpoint redpoint, $repeat repetisjon, $attempt forsøk';
+  }
+
+  @override
+  String logFinishKindShort(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {'boulder': 'B', 'other': 'T'});
+    return '$_temp0';
+  }
+
+  @override
+  String get logFinishKindLegend => 'B buldring · T tau';
+
+  @override
+  String get logFinishFilledIn => 'Fylt inn';
+
+  @override
+  String logFinishTitleHint(String title) {
+    return 'La det stå tomt for å bruke «$title».';
+  }
+
+  @override
+  String logFinishBoulders(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count buldringer',
+      one: '1 buldring',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String logFinishRoutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ruter',
+      one: '1 rute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String logFinishBestOf(String grades) {
+    return 'beste $grades';
+  }
+
+  @override
+  String get logFinishVisibility => 'Hvem kan se den';
+
+  @override
+  String get logFinishSave => 'Lagre økta';
+
+  @override
+  String logFinishAnd(String first, String second) {
+    return '$first og $second';
+  }
 }

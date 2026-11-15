@@ -349,4 +349,40 @@ void main() {
     }
     expect(await db.select(db.ascents).get(), hasLength(before.length));
   });
+
+  test('M3-8: a live session saves its times and partners', () async {
+    IndoorSessionDraft live(DateTime? start, DateTime? end) =>
+        IndoorSessionDraft(
+          gymId: gymId,
+          localDate: '2026-11-07',
+          tz: 'Europe/Oslo',
+          visibility: 'friends',
+          routes: [IndoorRouteDraft(wallId: cave, colourId: blue)],
+          climbs: [climb(0, AscentStyle.flash, 1)],
+          partners: const [' Ingrid ', ''],
+          startAt: start,
+          endAt: end,
+        );
+    final start = DateTime.utc(2026, 11, 7, 17, 2);
+    final end = DateTime.utc(2026, 11, 7, 19, 15);
+    final id = await logger.logIndoor(live(start, end), userId: 'me');
+    final session = (await SessionRepository(db).get(id))!;
+    expect((session.startAt, session.endAt), (start, end));
+    final members = await db.select(db.sessionMembers).get();
+    expect(members.map((m) => (m.sessionId, m.guestName)), [(id, 'Ingrid')]);
+
+    // Both or neither, in order, within a day, and not ahead of the clock.
+    for (final (s, e) in [
+      (start, null),
+      (null, end),
+      (end, start),
+      (start.subtract(const Duration(days: 2)), end),
+      (start, DateTime.utc(2026, 11, 9)),
+    ]) {
+      await expectLater(
+        logger.logIndoor(live(s, e), userId: 'me'),
+        throwsArgumentError,
+      );
+    }
+  });
 }

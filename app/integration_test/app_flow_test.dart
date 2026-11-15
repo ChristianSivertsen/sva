@@ -187,7 +187,8 @@ void main() {
     await tap(inSheet(find.text(l10n.logIndoorDidntTop)));
     await tap(inSheet(find.text(rope)));
     await tap(tile('Blue'));
-    await tap(inSheet(find.text(l10n.logSave(3))));
+    await tap(inSheet(find.text(l10n.logIndoorFinish)));
+    await tap(find.text(l10n.logFinishSave));
 
     await _pumpUntilFound(tester, find.text(l10n.logSaved));
     final card = find.ancestor(

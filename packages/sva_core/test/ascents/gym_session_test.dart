@@ -241,4 +241,83 @@ void main() {
       isTrue,
     );
   });
+
+  test('M3-8: a session sums up its climbs, sends, metres and best', () {
+    const mainGreen = (
+      wallId: 'main',
+      kind: 'rope',
+      colourId: 'green',
+      gradeId: null,
+      angle: 'angle.overhang',
+    );
+    const ranks = {'green': 0, 'blue': 1};
+    int? rank(GymRouteKey k) => ranks[k.colourId];
+    // A project blue on the main wall, two tries on 1 November.
+    var log =
+        const GymSessionLog(
+              past: [
+                (id: 'p', key: mainBlue, tries: 2, lastTried: '2026-11-01'),
+              ],
+            )
+            // Flash a green boulder, fall twice on a blue one, flash a green
+            // on the rope, then send the project.
+            .tap(caveGreen)
+            .tap(caveBlue)
+            .update(1, topped: false, tries: 2)
+            .tap(mainGreen, ropeType: 'lead')
+            .sendProject('p', ropeType: 'lead');
+    var s = log.summary(heightM: (w) => {'main': 15.0}[w], rank: rank);
+    expect(
+      (s.climbs, s.sends, s.flashes, s.boulders, s.ropes),
+      (4, 3, 2, 2, 2),
+    );
+    expect(s.metres, 30);
+    expect(s.best, {'boulder': caveGreen, 'rope': mainBlue});
+    expect(s.grades, [
+      (
+        kind: 'boulder',
+        colourId: 'green',
+        gradeId: null,
+        flash: 1,
+        redpoint: 0,
+        repeat: 0,
+        attempt: 0,
+      ),
+      (
+        kind: 'boulder',
+        colourId: 'blue',
+        gradeId: null,
+        flash: 0,
+        redpoint: 0,
+        repeat: 0,
+        attempt: 1,
+      ),
+      (
+        kind: 'rope',
+        colourId: 'green',
+        gradeId: null,
+        flash: 1,
+        redpoint: 0,
+        repeat: 0,
+        attempt: 0,
+      ),
+      (
+        kind: 'rope',
+        colourId: 'blue',
+        gradeId: null,
+        flash: 0,
+        redpoint: 1,
+        repeat: 0,
+        attempt: 0,
+      ),
+    ]);
+    expect(s.projectSends, [(index: 3, tries: 3, lastTried: '2026-11-01')]);
+
+    // A fall on the rope counts the wall for each try; an unknown height
+    // leaves the metres unknown rather than short.
+    log = log.update(2, topped: false, tries: 3);
+    s = log.summary(heightM: (w) => {'main': 15.0}[w], rank: rank);
+    expect(s.metres, 60);
+    expect(log.summary(heightM: (_) => null, rank: rank).metres, isNull);
+  });
 }

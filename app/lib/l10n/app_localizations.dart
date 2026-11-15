@@ -1789,6 +1789,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A later climb on the same route depends on this one. Change or remove that climb first.'**
   String get logLaterClimbRejected;
+
+  /// No description provided for @logIndoorLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · since {time} · {minutes} min'**
+  String logIndoorLive(String time, int minutes);
+
+  /// No description provided for @logIndoorLiveWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · starts with your first climb'**
+  String get logIndoorLiveWaiting;
+
+  /// No description provided for @logIndoorPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past session'**
+  String get logIndoorPast;
+
+  /// No description provided for @logIndoorLogPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Log a past session'**
+  String get logIndoorLogPast;
+
+  /// No description provided for @logIndoorLogLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Log live instead'**
+  String get logIndoorLogLive;
+
+  /// No description provided for @logIndoorDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get logIndoorDay;
+
+  /// No description provided for @logIndoorToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get logIndoorToday;
+
+  /// No description provided for @logIndoorYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get logIndoorYesterday;
+
+  /// No description provided for @logIndoorOtherDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Other day'**
+  String get logIndoorOtherDay;
+
+  /// No description provided for @logIndoorFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get logIndoorFinish;
+
+  /// No description provided for @logFinishTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish session'**
+  String get logFinishTitle;
+
+  /// No description provided for @logFinishBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to session'**
+  String get logFinishBack;
+
+  /// No description provided for @logFinishClimbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Climbs'**
+  String get logFinishClimbs;
+
+  /// No description provided for @logFinishSends.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends'**
+  String get logFinishSends;
+
+  /// No description provided for @logFinishFlashes.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashes'**
+  String get logFinishFlashes;
+
+  /// No description provided for @logFinishOnRope.
+  ///
+  /// In en, this message translates to:
+  /// **'On rope'**
+  String get logFinishOnRope;
+
+  /// No description provided for @logFinishBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best'**
+  String get logFinishBest;
+
+  /// No description provided for @logFinishProjectSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Project sent: {climb} · {wall} · try {tries}, {days, plural, =0{the same day as} =1{1 day after} other{{days} days after}} your last go'**
+  String logFinishProjectSent(String climb, String wall, int tries, int days);
+
+  /// No description provided for @logFinishBar.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: {flash} flash, {redpoint} redpoint, {repeat} repeat, {attempt} attempt'**
+  String logFinishBar(
+    String label,
+    int flash,
+    int redpoint,
+    int repeat,
+    int attempt,
+  );
+
+  /// No description provided for @logFinishKindShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, boulder{B} other{R}}'**
+  String logFinishKindShort(String kind);
+
+  /// No description provided for @logFinishKindLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'B boulder · R rope'**
+  String get logFinishKindLegend;
+
+  /// No description provided for @logFinishFilledIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled in'**
+  String get logFinishFilledIn;
+
+  /// No description provided for @logFinishTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave it empty to use “{title}”.'**
+  String logFinishTitleHint(String title);
+
+  /// No description provided for @logFinishBoulders.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 boulder} other{{count} boulders}}'**
+  String logFinishBoulders(int count);
+
+  /// No description provided for @logFinishRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 route} other{{count} routes}}'**
+  String logFinishRoutes(int count);
+
+  /// No description provided for @logFinishBestOf.
+  ///
+  /// In en, this message translates to:
+  /// **'best {grades}'**
+  String logFinishBestOf(String grades);
+
+  /// No description provided for @logFinishVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see it'**
+  String get logFinishVisibility;
+
+  /// No description provided for @logFinishSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save session'**
+  String get logFinishSave;
+
+  /// No description provided for @logFinishAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String logFinishAnd(String first, String second);
 }
 
 class _AppLocalizationsDelegate

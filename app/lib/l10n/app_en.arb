@@ -860,5 +860,124 @@
   },
   "logEditSave": "Save changes",
   "logEditSaved": "Changes saved",
-  "logLaterClimbRejected": "A later climb on the same route depends on this one. Change or remove that climb first."
+  "logLaterClimbRejected": "A later climb on the same route depends on this one. Change or remove that climb first.",
+  "logIndoorLive": "Live · since {time} · {minutes} min",
+  "@logIndoorLive": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "logIndoorLiveWaiting": "Live · starts with your first climb",
+  "logIndoorPast": "Past session",
+  "logIndoorLogPast": "Log a past session",
+  "logIndoorLogLive": "Log live instead",
+  "logIndoorDay": "Day",
+  "logIndoorToday": "Today",
+  "logIndoorYesterday": "Yesterday",
+  "logIndoorOtherDay": "Other day",
+  "logIndoorFinish": "Finish",
+  "logFinishTitle": "Finish session",
+  "logFinishBack": "Back to session",
+  "logFinishClimbs": "Climbs",
+  "logFinishSends": "Sends",
+  "logFinishFlashes": "Flashes",
+  "logFinishOnRope": "On rope",
+  "logFinishBest": "Best",
+  "logFinishProjectSent": "Project sent: {climb} · {wall} · try {tries}, {days, plural, =0{the same day as} =1{1 day after} other{{days} days after}} your last go",
+  "@logFinishProjectSent": {
+    "placeholders": {
+      "climb": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      },
+      "tries": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "logFinishBar": "{label}: {flash} flash, {redpoint} redpoint, {repeat} repeat, {attempt} attempt",
+  "@logFinishBar": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "flash": {
+        "type": "int"
+      },
+      "redpoint": {
+        "type": "int"
+      },
+      "repeat": {
+        "type": "int"
+      },
+      "attempt": {
+        "type": "int"
+      }
+    }
+  },
+  "logFinishKindShort": "{kind, select, boulder{B} other{R}}",
+  "@logFinishKindShort": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "logFinishKindLegend": "B boulder · R rope",
+  "logFinishFilledIn": "Filled in",
+  "logFinishTitleHint": "Leave it empty to use “{title}”.",
+  "@logFinishTitleHint": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "logFinishBoulders": "{count, plural, =1{1 boulder} other{{count} boulders}}",
+  "@logFinishBoulders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logFinishRoutes": "{count, plural, =1{1 route} other{{count} routes}}",
+  "@logFinishRoutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logFinishBestOf": "best {grades}",
+  "@logFinishBestOf": {
+    "placeholders": {
+      "grades": {
+        "type": "String"
+      }
+    }
+  },
+  "logFinishVisibility": "Who can see it",
+  "logFinishSave": "Save session",
+  "logFinishAnd": "{first} and {second}",
+  "@logFinishAnd": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  }
 }
