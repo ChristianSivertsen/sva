@@ -1,6 +1,6 @@
 /// Where a grade sits in the four bands a graded gym's climbs are shaded
-/// by: beginner, intermediate, advanced and elite. [band] is 0 to 3, and
-/// [depth] goes from 0 for the band's easiest grade to 1 for its hardest,
+/// by: beginner, intermediate, advanced and elite. `band` is 0 to 3, and
+/// `depth` goes from 0 for the band's easiest grade to 1 for its hardest,
 /// so a band starts pale again and the step up is easy to see
 /// (prototype/gym-log.html, `ramp`).
 typedef GradeBand = ({int band, double depth});

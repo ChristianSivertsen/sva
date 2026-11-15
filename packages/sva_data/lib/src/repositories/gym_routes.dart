@@ -51,8 +51,8 @@ typedef GymProject = ({
 /// How a gym route is shown, since it has no name: its colour (or its
 /// grade, with the grade's system) and its wall. All `null` parts are
 /// unknown, such as the wall of a route whose wall was removed.
-/// [colourHex] (`#RRGGBB`) and the grade's place on the shared scale
-/// ([gradeScore], for [gradeType]) colour its holds on the wall image.
+/// `colourHex` (`#RRGGBB`) and the grade's place on the shared scale
+/// (`gradeScore`, for `gradeType`) colour its holds on the wall image.
 typedef GymRouteLabel = ({
   String? colour,
   String? colourHex,
