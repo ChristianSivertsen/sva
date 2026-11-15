@@ -111,6 +111,56 @@ Future<ProviderContainer> _start(
   return container;
 }
 
+/// A session at Gnisten with a blue on the cave and a graded 6A on the
+/// board.
+Future<void> _startGym(WidgetTester tester) async {
+  final session = Session(
+    id: 'gym',
+    createdAt: DateTime.utc(2026, 11),
+    updatedAt: DateTime.utc(2026, 11),
+    ownerId: localUserId,
+    visibility: 'private',
+    setting: 'indoor',
+    areaId: 'g1',
+    localDate: '2026-11-05',
+    tz: 'Europe/Oslo',
+    locationHidden: false,
+  );
+  Ascent climb(int ordinal, String routeId) => _climb(
+    'gym',
+    ordinal,
+    routeId,
+    'flash',
+  ).copyWith(setting: 'indoor', discipline: 'boulder');
+  await _start(
+    tester,
+    sessions: (limit) => Stream.value([session]),
+    climbs: {
+      'gym': [climb(1, 'blue'), climb(2, 'graded')],
+    },
+    gymRoutes: {
+      'blue': (
+        colour: 'Blue',
+        colourHex: '#2F6FD1',
+        grade: null,
+        gradeSystem: null,
+        gradeType: null,
+        gradeScore: null,
+        wall: 'Cave',
+      ),
+      'graded': (
+        colour: null,
+        colourHex: null,
+        grade: '6A',
+        gradeSystem: 'font',
+        gradeType: 'boulder',
+        gradeScore: 14,
+        wall: 'Board',
+      ),
+    },
+  );
+}
+
 void main() {
   testWidgets("M2-7: a feed card lays out the session like the prototype's "
       'post', (tester) async {
@@ -349,40 +399,7 @@ void main() {
   testWidgets('M3-4: a gym session card shows the gym and its climbs', (
     tester,
   ) async {
-    final session = Session(
-      id: 'gym',
-      createdAt: DateTime.utc(2026, 11),
-      updatedAt: DateTime.utc(2026, 11),
-      ownerId: localUserId,
-      visibility: 'private',
-      setting: 'indoor',
-      areaId: 'g1',
-      localDate: '2026-11-05',
-      tz: 'Europe/Oslo',
-      locationHidden: false,
-    );
-    Ascent climb(int ordinal, String routeId) => _climb(
-      'gym',
-      ordinal,
-      routeId,
-      'flash',
-    ).copyWith(setting: 'indoor', discipline: 'boulder');
-    await _start(
-      tester,
-      sessions: (limit) => Stream.value([session]),
-      climbs: {
-        'gym': [climb(1, 'blue'), climb(2, 'graded')],
-      },
-      gymRoutes: {
-        'blue': (colour: 'Blue', grade: null, gradeSystem: null, wall: 'Cave'),
-        'graded': (
-          colour: null,
-          grade: '6A',
-          gradeSystem: 'font',
-          wall: 'Board',
-        ),
-      },
-    );
+    await _startGym(tester);
     final card = find.byType(FeedCard);
     Finder inCard(Finder f) => find.descendant(of: card, matching: f);
     expect(inCard(find.text('Gnisten')), findsOneWidget);
@@ -397,5 +414,27 @@ void main() {
       findsOneWidget,
     );
     expect(inCard(find.text('6A')), findsOneWidget);
+  });
+
+  testWidgets("M3-9: a gym session card leads with a wall in the session's "
+      'colours', (tester) async {
+    await _startGym(tester);
+    final wall = find.descendant(
+      of: find.byType(FeedCard),
+      matching: find.byType(SvaGymWall),
+    );
+    final brightness = Theme.of(tester.element(wall)).brightness;
+    // One cluster per climb: the blue in the gym's blue, the 6A in the
+    // shade of its grade.
+    expect(tester.widget<SvaGymWall>(wall).holds, [
+      gymColourFromHex('#2F6FD1'),
+      gymGradeShade(brightness, 1, 0),
+    ]);
+    expect(find.text('Gnisten · 2 climbs'), findsOneWidget);
+    // Read out as part of the card, after "Open session".
+    expect(
+      find.bySemanticsLabel(RegExp('Wall at Gnisten with 2 climbs')),
+      findsOneWidget,
+    );
   });
 }

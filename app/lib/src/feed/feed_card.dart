@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/feed/session_wall.dart';
 import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva_core/sva_core.dart' show sessionTotals;
@@ -18,8 +19,8 @@ const _climbsShown = 6;
 const _tagsShown = 6;
 
 /// One of the user's sessions in the feed, laid out like the prototype's
-/// post. The topo or wall image joins it once photos, walls and topos
-/// exist (M3, M5, M15).
+/// post. Indoor sessions lead with their wall; the topo joins outdoor
+/// ones once photos and topos exist (M5, M15).
 class FeedCard extends ConsumerWidget {
   const new({required this.session, super.key});
 
@@ -44,10 +45,12 @@ class FeedCard extends ConsumerWidget {
       final id? when indoor => ref.watch(placeNameProvider(id)).value,
       _ => null,
     };
+    // Only loaded labels, so the wall waits for all of them.
     final labels = {
       if (indoor)
         for (final id in {for (final c in climbs) c.routeId})
-          id: ref.watch(gymRouteLabelProvider(id)).value,
+          if (ref.watch(gymRouteLabelProvider(id)) case AsyncData(:final value))
+            id: value,
     };
 
     final crags = {for (final c in climbs) ?hits[c.routeId]?.crag};
@@ -79,6 +82,15 @@ class FeedCard extends ConsumerWidget {
       note: weather == null ? null : weatherLine(l10n, weather),
       title: session.title,
       description: session.description,
+      picture: indoor
+          ? sessionWall(
+              context,
+              sessionId: session.id,
+              gym: gym ?? l10n.feedSetting(session.setting),
+              climbs: climbs,
+              labels: labels,
+            )
+          : null,
       climbs: [
         for (final climb in shown)
           if (labels[climb.routeId] case final label?)

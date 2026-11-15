@@ -4,14 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/feed/session_wall.dart';
 import 'package:sva/src/places/grade_badge.dart';
 import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
 
-/// One session: its day, texts, partners and every climb, with edit and
-/// delete for the owner.
+/// One session: its wall image when indoors, its day, texts, partners and
+/// every climb, with edit and delete for the owner.
 class SessionScreen extends ConsumerStatefulWidget {
   const new({required this.sessionId, super.key});
 
@@ -151,6 +152,27 @@ class _SessionDetail extends ConsumerWidget {
     final climbs = ref.watch(sessionAscentsProvider(session.id)).value;
     final partners = ref.watch(sessionPartnersProvider(session.id)).value;
     final day = formatDay(l10n, session.localDate);
+    final wall = switch (climbs) {
+      final climbs? when session.setting == 'indoor' => sessionWall(
+        context,
+        sessionId: session.id,
+        gym:
+            switch (session.areaId) {
+              final id? => ref.watch(placeNameProvider(id)).value,
+              null => null,
+            } ??
+            l10n.feedSetting(session.setting),
+        climbs: climbs,
+        labels: {
+          for (final id in {for (final c in climbs) c.routeId})
+            if (ref.watch(gymRouteLabelProvider(id)) case AsyncData(
+              :final value,
+            ))
+              id: value,
+        },
+      ),
+      _ => null,
+    };
     final facts = [
       if (session.title != null) day,
       if (session.conditions case final c?)
@@ -164,6 +186,7 @@ class _SessionDetail extends ConsumerWidget {
         SvaSpace.xxl,
       ),
       children: [
+        if (wall != null) ...[wall, const SizedBox(height: SvaSpace.md)],
         Semantics(
           header: true,
           child: Text(session.title ?? day, style: text.title),

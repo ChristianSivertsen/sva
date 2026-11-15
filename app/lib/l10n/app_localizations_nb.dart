@@ -1397,4 +1397,26 @@ class AppLocalizationsNb extends AppLocalizations {
   String logFinishAnd(String first, String second) {
     return '$first og $second';
   }
+
+  @override
+  String wallLabel(String gym, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count klatringer',
+      one: '1 klatring',
+    );
+    return '$gym · $_temp0';
+  }
+
+  @override
+  String wallSemantics(String gym, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count klatringer',
+      one: '1 klatring',
+    );
+    return 'Vegg på $gym med $_temp0, tak i fargene som ble klatret';
+  }
 }
