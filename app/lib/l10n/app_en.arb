@@ -396,7 +396,7 @@
       }
     }
   },
-  "attributeValue": "{value, select, rock_granite{Granite} rock_gneiss{Gneiss} rock_limestone{Limestone} rock_sandstone{Sandstone} rock_basalt{Basalt} rock_conglomerate{Conglomerate} rock_quartzite{Quartzite} rock_schist{Schist} rock_dolerite{Dolerite} angle_slab{Slab} angle_vertical{Vertical} angle_overhang{Overhang} angle_roof{Roof} feature_face{Face} feature_finger_crack{Finger crack} feature_hand_crack{Hand crack} feature_offwidth{Offwidth} feature_chimney{Chimney} feature_corner{Corner} feature_arete{Arête} feature_tufa{Tufa} feature_ice_pillar{Ice pillar} feature_ice_curtain{Ice curtain} feature_mixed_dry_tool{Dry tooling} hold_crimp{Crimps} hold_pocket{Pockets} hold_pinch{Pinches} hold_sloper{Slopers} hold_jug{Jugs} hold_undercling{Underclings} hold_sidepull{Sidepulls} protection_bolted{Bolted} protection_trad{Trad gear} protection_mixed{Mixed protection} protection_runout{Runout} protection_none{No protection} protection_pads{Pads} protection_ice_screws{Ice screws} descent_lower_off{Lower off} descent_rappel{Rappel} descent_walk_off{Walk off} descent_downclimb{Downclimb} descent_swim{Swim} feel_very_soft{Very soft} feel_soft{Soft} feel_fair{Fair} feel_hard{Hard} feel_very_hard{Very hard} tag_pumpy{Pumpy} tag_techy{Technical} tag_powerful{Powerful} tag_scary{Scary} tag_sustained{Sustained} tag_reachy{Reachy} tag_polished{Polished} tag_great_rock{Great rock} tag_heady{Heady} tag_balancy{Balancy} condition_perfect{Perfect} condition_dry{Dry} condition_humid{Humid} condition_damp{Damp} condition_wet{Wet} condition_icy{Icy} condition_windy{Windy} condition_cold{Cold} condition_hot{Hot} other{}}",
+  "attributeValue": "{value, select, rock_granite{Granite} rock_gneiss{Gneiss} rock_limestone{Limestone} rock_sandstone{Sandstone} rock_basalt{Basalt} rock_conglomerate{Conglomerate} rock_quartzite{Quartzite} rock_schist{Schist} rock_dolerite{Dolerite} angle_slab{Slab} angle_vertical{Vertical} angle_overhang{Overhang} angle_roof{Roof} feature_face{Face} feature_finger_crack{Finger crack} feature_hand_crack{Hand crack} feature_offwidth{Offwidth} feature_chimney{Chimney} feature_corner{Corner} feature_arete{Arête} feature_tufa{Tufa} feature_ice_pillar{Ice pillar} feature_ice_curtain{Ice curtain} feature_mixed_dry_tool{Dry tooling} hold_crimp{Crimps} hold_pocket{Pockets} hold_pinch{Pinches} hold_sloper{Slopers} hold_jug{Jugs} hold_undercling{Underclings} hold_sidepull{Sidepulls} protection_bolted{Bolted} protection_trad{Trad gear} protection_mixed{Mixed protection} protection_runout{Runout} protection_none{No protection} protection_pads{Pads} protection_ice_screws{Ice screws} descent_lower_off{Lower off} descent_rappel{Rappel} descent_walk_off{Walk off} descent_downclimb{Downclimb} descent_swim{Swim} feel_very_soft{Very soft} feel_soft{Soft} feel_fair{Fair} feel_hard{Hard} feel_very_hard{Very hard} tag_pumpy{Pumpy} tag_techy{Technical} tag_powerful{Powerful} tag_scary{Scary} tag_sustained{Sustained} tag_reachy{Reachy} tag_polished{Polished} tag_great_rock{Great rock} tag_heady{Heady} tag_balancy{Balancy} condition_perfect{Perfect} condition_dry{Dry} condition_humid{Humid} condition_damp{Damp} condition_wet{Wet} condition_icy{Icy} condition_windy{Windy} condition_cold{Cold} condition_hot{Hot} hold_volume{Volumes} movement_powerful{Powerful} movement_technical{Technical} movement_balance{Balance} movement_coordination{Coordination} movement_dyno{Dyno} movement_compression{Compression} other{}}",
   "@attributeValue": {
     "description": "A route detail by its stable key, with the dot replaced by an underscore (hold.crimp is hold_crimp). Empty for unknown keys.",
     "placeholders": {
@@ -498,6 +498,56 @@
   "logIndoorFoundHere": "Found from your location",
   "logIndoorWall": "Wall",
   "logIndoorTapHint": "Tap a colour each time you top it.",
+  "logIndoorHoldHint": "Hold a colour to add details.",
+  "logIndoorDetailsTitle": "{colour}, {kind}",
+  "@logIndoorDetailsTitle": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorDetailsLabel": "Details for {colour} on {wall}",
+  "@logIndoorDetailsLabel": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "wall": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorDetailsHold": "{colour} {kind} with details",
+  "@logIndoorDetailsHold": {
+    "placeholders": {
+      "colour": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "logIndoorResult": "Result",
+  "logIndoorResultTopped": "Topped",
+  "logIndoorResultClean": "Topped clean",
+  "logIndoorResultRests": "Topped with rests",
+  "logIndoorMyGrade": "Your grade",
+  "logIndoorMyGradeHint": "Leave it empty if it felt like the gym's grade.",
+  "logIndoorAngle": "Angle",
+  "logIndoorAngleFromWall": "From the wall. Change it if this climb is steeper or flatter.",
+  "logIndoorHolds": "Main holds",
+  "logIndoorMovement": "Movement",
+  "logIndoorStyleNote": "Holds and movement feed your style profile, so you can see what you send and what you avoid.",
+  "logIndoorBeta": "Beta",
+  "logIndoorBetaHint": "Heel hook on the volume, then the left crimp",
+  "logIndoorBetaNote": "Only you see beta.",
+  "logIndoorRemoveClimb": "Remove climb",
+  "logIndoorDone": "Done",
   "logIndoorProjects": "Your projects here",
   "logIndoorProjectsHint": "Tap one when you send it.",
   "logIndoorProjectSub": "{tries, plural, =1{1 try} other{{tries} tries}} · last {date}",

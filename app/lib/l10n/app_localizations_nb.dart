@@ -620,6 +620,13 @@ class AppLocalizationsNb extends AppLocalizations {
       'condition_windy': 'Vind',
       'condition_cold': 'Kaldt',
       'condition_hot': 'Varmt',
+      'hold_volume': 'Volumer',
+      'movement_powerful': 'Kraftfull',
+      'movement_technical': 'Teknisk',
+      'movement_balance': 'Balanse',
+      'movement_coordination': 'Koordinasjon',
+      'movement_dyno': 'Dyno',
+      'movement_compression': 'Kompresjon',
       'other': '',
     });
     return '$_temp0';
@@ -796,6 +803,76 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get logIndoorTapHint => 'Trykk på en farge hver gang du toppet den.';
+
+  @override
+  String get logIndoorHoldHint =>
+      'Hold inne en farge for å legge til detaljer.';
+
+  @override
+  String logIndoorDetailsTitle(String colour, String kind) {
+    return '$colour, $kind';
+  }
+
+  @override
+  String logIndoorDetailsLabel(String colour, String wall) {
+    return 'Detaljer for $colour på $wall';
+  }
+
+  @override
+  String logIndoorDetailsHold(String colour, String kind) {
+    return '$colour $kind med detaljer';
+  }
+
+  @override
+  String get logIndoorResult => 'Resultat';
+
+  @override
+  String get logIndoorResultTopped => 'Toppet';
+
+  @override
+  String get logIndoorResultClean => 'Toppet rent';
+
+  @override
+  String get logIndoorResultRests => 'Toppet med hvil';
+
+  @override
+  String get logIndoorMyGrade => 'Din grad';
+
+  @override
+  String get logIndoorMyGradeHint =>
+      'La det stå tomt hvis den føltes som gymmets grad.';
+
+  @override
+  String get logIndoorAngle => 'Vinkel';
+
+  @override
+  String get logIndoorAngleFromWall =>
+      'Fra veggen. Endre den hvis denne er brattere eller slakere.';
+
+  @override
+  String get logIndoorHolds => 'Viktigste grep';
+
+  @override
+  String get logIndoorMovement => 'Bevegelse';
+
+  @override
+  String get logIndoorStyleNote =>
+      'Grep og bevegelse går inn i stilprofilen din, så du ser hva du klarer og hva du unngår.';
+
+  @override
+  String get logIndoorBeta => 'Beta';
+
+  @override
+  String get logIndoorBetaHint => 'Hælhook på volumet, så venstre liste';
+
+  @override
+  String get logIndoorBetaNote => 'Bare du ser betaen.';
+
+  @override
+  String get logIndoorRemoveClimb => 'Fjern klatringen';
+
+  @override
+  String get logIndoorDone => 'Ferdig';
 
   @override
   String get logIndoorProjects => 'Prosjektene dine her';

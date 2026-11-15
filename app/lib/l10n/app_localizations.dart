@@ -833,7 +833,7 @@ abstract class AppLocalizations {
   /// A route detail by its stable key, with the dot replaced by an underscore (hold.crimp is hold_crimp). Empty for unknown keys.
   ///
   /// In en, this message translates to:
-  /// **'{value, select, rock_granite{Granite} rock_gneiss{Gneiss} rock_limestone{Limestone} rock_sandstone{Sandstone} rock_basalt{Basalt} rock_conglomerate{Conglomerate} rock_quartzite{Quartzite} rock_schist{Schist} rock_dolerite{Dolerite} angle_slab{Slab} angle_vertical{Vertical} angle_overhang{Overhang} angle_roof{Roof} feature_face{Face} feature_finger_crack{Finger crack} feature_hand_crack{Hand crack} feature_offwidth{Offwidth} feature_chimney{Chimney} feature_corner{Corner} feature_arete{Arête} feature_tufa{Tufa} feature_ice_pillar{Ice pillar} feature_ice_curtain{Ice curtain} feature_mixed_dry_tool{Dry tooling} hold_crimp{Crimps} hold_pocket{Pockets} hold_pinch{Pinches} hold_sloper{Slopers} hold_jug{Jugs} hold_undercling{Underclings} hold_sidepull{Sidepulls} protection_bolted{Bolted} protection_trad{Trad gear} protection_mixed{Mixed protection} protection_runout{Runout} protection_none{No protection} protection_pads{Pads} protection_ice_screws{Ice screws} descent_lower_off{Lower off} descent_rappel{Rappel} descent_walk_off{Walk off} descent_downclimb{Downclimb} descent_swim{Swim} feel_very_soft{Very soft} feel_soft{Soft} feel_fair{Fair} feel_hard{Hard} feel_very_hard{Very hard} tag_pumpy{Pumpy} tag_techy{Technical} tag_powerful{Powerful} tag_scary{Scary} tag_sustained{Sustained} tag_reachy{Reachy} tag_polished{Polished} tag_great_rock{Great rock} tag_heady{Heady} tag_balancy{Balancy} condition_perfect{Perfect} condition_dry{Dry} condition_humid{Humid} condition_damp{Damp} condition_wet{Wet} condition_icy{Icy} condition_windy{Windy} condition_cold{Cold} condition_hot{Hot} other{}}'**
+  /// **'{value, select, rock_granite{Granite} rock_gneiss{Gneiss} rock_limestone{Limestone} rock_sandstone{Sandstone} rock_basalt{Basalt} rock_conglomerate{Conglomerate} rock_quartzite{Quartzite} rock_schist{Schist} rock_dolerite{Dolerite} angle_slab{Slab} angle_vertical{Vertical} angle_overhang{Overhang} angle_roof{Roof} feature_face{Face} feature_finger_crack{Finger crack} feature_hand_crack{Hand crack} feature_offwidth{Offwidth} feature_chimney{Chimney} feature_corner{Corner} feature_arete{Arête} feature_tufa{Tufa} feature_ice_pillar{Ice pillar} feature_ice_curtain{Ice curtain} feature_mixed_dry_tool{Dry tooling} hold_crimp{Crimps} hold_pocket{Pockets} hold_pinch{Pinches} hold_sloper{Slopers} hold_jug{Jugs} hold_undercling{Underclings} hold_sidepull{Sidepulls} protection_bolted{Bolted} protection_trad{Trad gear} protection_mixed{Mixed protection} protection_runout{Runout} protection_none{No protection} protection_pads{Pads} protection_ice_screws{Ice screws} descent_lower_off{Lower off} descent_rappel{Rappel} descent_walk_off{Walk off} descent_downclimb{Downclimb} descent_swim{Swim} feel_very_soft{Very soft} feel_soft{Soft} feel_fair{Fair} feel_hard{Hard} feel_very_hard{Very hard} tag_pumpy{Pumpy} tag_techy{Technical} tag_powerful{Powerful} tag_scary{Scary} tag_sustained{Sustained} tag_reachy{Reachy} tag_polished{Polished} tag_great_rock{Great rock} tag_heady{Heady} tag_balancy{Balancy} condition_perfect{Perfect} condition_dry{Dry} condition_humid{Humid} condition_damp{Damp} condition_wet{Wet} condition_icy{Icy} condition_windy{Windy} condition_cold{Cold} condition_hot{Hot} hold_volume{Volumes} movement_powerful{Powerful} movement_technical{Technical} movement_balance{Balance} movement_coordination{Coordination} movement_dyno{Dyno} movement_compression{Compression} other{}}'**
   String attributeValue(String value);
 
   /// No description provided for @routeAdd.
@@ -1135,6 +1135,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap a colour each time you top it.'**
   String get logIndoorTapHint;
+
+  /// No description provided for @logIndoorHoldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a colour to add details.'**
+  String get logIndoorHoldHint;
+
+  /// No description provided for @logIndoorDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{colour}, {kind}'**
+  String logIndoorDetailsTitle(String colour, String kind);
+
+  /// No description provided for @logIndoorDetailsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Details for {colour} on {wall}'**
+  String logIndoorDetailsLabel(String colour, String wall);
+
+  /// No description provided for @logIndoorDetailsHold.
+  ///
+  /// In en, this message translates to:
+  /// **'{colour} {kind} with details'**
+  String logIndoorDetailsHold(String colour, String kind);
+
+  /// No description provided for @logIndoorResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get logIndoorResult;
+
+  /// No description provided for @logIndoorResultTopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Topped'**
+  String get logIndoorResultTopped;
+
+  /// No description provided for @logIndoorResultClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Topped clean'**
+  String get logIndoorResultClean;
+
+  /// No description provided for @logIndoorResultRests.
+  ///
+  /// In en, this message translates to:
+  /// **'Topped with rests'**
+  String get logIndoorResultRests;
+
+  /// No description provided for @logIndoorMyGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Your grade'**
+  String get logIndoorMyGrade;
+
+  /// No description provided for @logIndoorMyGradeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave it empty if it felt like the gym\'s grade.'**
+  String get logIndoorMyGradeHint;
+
+  /// No description provided for @logIndoorAngle.
+  ///
+  /// In en, this message translates to:
+  /// **'Angle'**
+  String get logIndoorAngle;
+
+  /// No description provided for @logIndoorAngleFromWall.
+  ///
+  /// In en, this message translates to:
+  /// **'From the wall. Change it if this climb is steeper or flatter.'**
+  String get logIndoorAngleFromWall;
+
+  /// No description provided for @logIndoorHolds.
+  ///
+  /// In en, this message translates to:
+  /// **'Main holds'**
+  String get logIndoorHolds;
+
+  /// No description provided for @logIndoorMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Movement'**
+  String get logIndoorMovement;
+
+  /// No description provided for @logIndoorStyleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Holds and movement feed your style profile, so you can see what you send and what you avoid.'**
+  String get logIndoorStyleNote;
+
+  /// No description provided for @logIndoorBeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Beta'**
+  String get logIndoorBeta;
+
+  /// No description provided for @logIndoorBetaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Heel hook on the volume, then the left crimp'**
+  String get logIndoorBetaHint;
+
+  /// No description provided for @logIndoorBetaNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you see beta.'**
+  String get logIndoorBetaNote;
+
+  /// No description provided for @logIndoorRemoveClimb.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove climb'**
+  String get logIndoorRemoveClimb;
+
+  /// No description provided for @logIndoorDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get logIndoorDone;
 
   /// No description provided for @logIndoorProjects.
   ///

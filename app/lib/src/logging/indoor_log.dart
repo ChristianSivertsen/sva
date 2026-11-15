@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/logging/gym_climb_details.dart';
 import 'package:sva/src/logging/gym_tap_card.dart';
 import 'package:sva/src/logging/gym_tiles.dart';
 import 'package:sva/src/logging/here.dart';
@@ -14,6 +17,7 @@ import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva_core/sva_core.dart'
     show
+        Grade,
         GradeSystem,
         GymMatchKind,
         GymPastRoute,
@@ -48,6 +52,9 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
 
   /// The gym [_log]'s projects are from.
   String? _logGym;
+
+  /// The details of each of [_log]'s entries, in the same order.
+  final _details = <_ClimbDetails>[];
   var _saving = false;
 
   /// The gym to log at: the one picked (or pinned by the first climb),
@@ -81,17 +88,19 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     return (id: id, here: false, waiting: false);
   }
 
-  void _tap(String gymId, String wallId, String kind, GymTile tile) {
+  void _tap(String gymId, GymWall wall, GymTile tile) {
     final key = (
-      wallId: wallId,
-      kind: kind,
+      wallId: wall.id,
+      kind: wall.kind,
       colourId: tile.colourId,
       gradeId: tile.gradeId,
+      angle: wall.angle,
     );
     setState(() {
       // The session stays at this gym once it has a climb.
       _gymId = gymId;
-      _log = _log.tap(key, ropeType: kind == 'rope' ? _ropeType : null);
+      _log = _log.tap(key, ropeType: wall.kind == 'rope' ? _ropeType : null);
+      _details.add(_ClimbDetails());
     });
   }
 
@@ -101,6 +110,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
       project.id,
       ropeType: project.key.kind == 'rope' ? _ropeType : null,
     );
+    _details.add(_ClimbDetails());
   });
 
   /// Marks [project] as gone, so it is no longer offered.
@@ -153,20 +163,29 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     );
   }
 
-  void _remove(int index) => setState(() => _log = _log.remove(index));
+  void _remove(int index) => setState(() {
+    _log = _log.remove(index);
+    _details.removeAt(index);
+  });
 
-  void _update(int index, {bool? topped, int? tries, String? ropeType}) =>
-      setState(() {
-        if (ropeType != null) _ropeType = ropeType;
-        _log = _log.update(
-          index,
-          topped: topped,
-          tries: tries,
-          ropeType: ropeType,
-        );
-      });
+  void _update(
+    int index, {
+    bool? topped,
+    bool? rested,
+    int? tries,
+    String? ropeType,
+  }) => setState(() {
+    if (ropeType != null) _ropeType = ropeType;
+    _log = _log.update(
+      index,
+      topped: topped,
+      rested: rested,
+      tries: tries,
+      ropeType: ropeType,
+    );
+  });
 
-  Future<void> _save(String gymId) async {
+  Future<void> _save(String gymId, GymSetup setup) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final climbs = _log.climbs;
@@ -191,6 +210,15 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                       wallId: r.wallId,
                       colourId: r.colourId,
                       gradeId: r.gradeId,
+                      // Only when it differs: the wall's is the default.
+                      angle:
+                          r.angle ==
+                              setup.walls
+                                  .where((w) => w.id == r.wallId)
+                                  .firstOrNull
+                                  ?.angle
+                          ? null
+                          : r.angle,
                     ),
               ],
               climbs: [
@@ -200,6 +228,11 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                     style: climbs[i].style,
                     tries: climbs[i].tries,
                     ascentType: e.ropeType ?? 'boulder',
+                    // Your grade is for a climb you topped.
+                    personalGradeId: e.topped ? _details[i].gradeId : null,
+                    holds: [..._details[i].holds],
+                    movement: [..._details[i].movement],
+                    beta: _details[i].beta,
                   ),
               ],
             ),
@@ -345,6 +378,105 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     final projects = kind == null
         ? const <({GymPastRoute route, int tries})>[]
         : _log.projects(kind);
+    final systemFor = {for (final k in kinds) k: _system(k)};
+
+    // Five grades around a climb's, in your grade system for its kind: the
+    // gym's grade, or the middle of its colour's range. None when the gym
+    // has no grade for it.
+    List<(String, String)> gradeOptions(GymRouteKey key) {
+      final system = systemFor[key.kind];
+      if (system == null) return const [];
+      String idOf(Grade g) => seedId('grade:${system.key}:${g.label}');
+      double? score;
+      if (key.colourId case final id?) {
+        final c = setup.colours.where((c) => c.id == id).firstOrNull;
+        final (lo, hi) = key.kind == 'boulder'
+            ? (c?.boulderMinScore, c?.boulderMaxScore)
+            : (c?.routeMinScore, c?.routeMaxScore);
+        if (lo != null && hi != null) score = (lo + hi) / 2;
+      } else if (key.gradeId case final id?) {
+        score = system.grades.where((g) => idOf(g) == id).firstOrNull?.score;
+      }
+      if (score == null) return const [];
+      return [for (final g in system.around(score)) (idOf(g), g.label)];
+    }
+
+    // The details sheet for entry [index]. It shows the log as it changes.
+    void openDetails(int index) => unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (context, setSheet) {
+            void change(VoidCallback f) {
+              setState(f);
+              setSheet(() {});
+            }
+
+            if (index >= _log.entries.length) return const SizedBox.shrink();
+            final e = _log.entries[index];
+            final key = _log.routes[e.route];
+            final d = _details[index];
+            return GymClimbDetails(
+              title: l10n.logIndoorDetailsTitle(
+                labelOf(key),
+                l10n.logIndoorKind(key.kind),
+              ),
+              entry: e,
+              style: _log.climbs[index].style,
+              walls: [
+                for (final w in setup.walls)
+                  if (w.kind == key.kind) (w.id, w.name),
+              ],
+              wallId: key.wallId,
+              angle: key.angle,
+              wallAngle: setup.walls
+                  .where((w) => w.id == key.wallId)
+                  .firstOrNull
+                  ?.angle,
+              grades: gradeOptions(key),
+              gradeId: d.gradeId,
+              holds: d.holds,
+              movement: d.movement,
+              beta: d.beta,
+              onResult: (r) => change(
+                () => _log = _log.update(
+                  index,
+                  topped: r != 'no',
+                  rested: r == 'rests',
+                ),
+              ),
+              onTries: (t) => change(() => _log = _log.update(index, tries: t)),
+              onRopeType: (t) => change(() {
+                _ropeType = t;
+                _log = _log.update(index, ropeType: t);
+              }),
+              onWall: (id) => change(() {
+                final w = setup.walls.firstWhere((w) => w.id == id);
+                _log = _log.moveToWall(index, id, angle: w.angle);
+                // Fixing the latest climb moves the log there too: you
+                // most likely forgot to switch.
+                if (index == _log.entries.length - 1) _wall[w.kind] = id;
+              }),
+              onAngle: (a) => change(
+                () => _log = _log.moveToWall(index, key.wallId, angle: a),
+              ),
+              onGrade: (g) => change(() => d.gradeId = g),
+              onHolds: (v) => change(() => d.holds = v),
+              onMovement: (v) => change(() => d.movement = v),
+              // The field keeps its own text; nothing else shows it.
+              onBeta: (b) => d.beta = b,
+              onRemove: () {
+                Navigator.pop(sheetContext);
+                _remove(index);
+              },
+              onDone: () => Navigator.pop(sheetContext),
+            );
+          },
+        ),
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -440,7 +572,10 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
           if (tiles.isEmpty)
             message(l10n.logIndoorNoTiles)
           else ...[
-            Text(l10n.logIndoorTapHint, style: muted),
+            Text(
+              '${l10n.logIndoorTapHint} ${l10n.logIndoorHoldHint}',
+              style: muted,
+            ),
             const SizedBox(height: SvaSpace.xs),
             Wrap(
               spacing: SvaSpace.xs,
@@ -453,7 +588,11 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                       tile.label,
                       l10n.logIndoorKind(kind),
                     ),
-                    onTap: () => _tap(gymId, wall.id, kind, tile),
+                    onTap: () => _tap(gymId, wall, tile),
+                    onLongPress: () {
+                      _tap(gymId, wall, tile);
+                      openDetails(_log.entries.length - 1);
+                    },
                   ),
               ],
             ),
@@ -491,12 +630,29 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
               spacing: SvaSpace.xs,
               children: [
                 Expanded(
-                  child: Text(
-                    [
+                  child: Semantics(
+                    button: true,
+                    label: l10n.logIndoorDetailsLabel(
                       labelOf(_log.routes[e.route]),
-                      ?wallName(_log.routes[e.route].wallId),
-                    ].join(' · '),
-                    style: text.body,
+                      wallName(_log.routes[e.route].wallId) ?? '',
+                    ),
+                    onTap: () => openDetails(i),
+                    excludeSemantics: true,
+                    child: InkWell(
+                      onTap: () => openDetails(i),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: SvaSpace.xs,
+                        ),
+                        child: Text(
+                          [
+                            labelOf(_log.routes[e.route]),
+                            ?wallName(_log.routes[e.route].wallId),
+                          ].join(' · '),
+                          style: text.body,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 SvaStyleTag(
@@ -512,7 +668,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
             ),
           formGap,
           FilledButton(
-            onPressed: _saving ? null : () => _save(gymId),
+            onPressed: _saving ? null : () => _save(gymId, setup),
             child: Text(l10n.logSave(entries.length)),
           ),
         ],
@@ -548,6 +704,7 @@ List<GymPastRoute> _pastRoutes(List<GymProject> projects, GymSetup setup) => [
           kind: p.route.discipline == 'boulder' ? 'boulder' : 'rope',
           colourId: p.route.gymColourGradeId,
           gradeId: p.gradeId,
+          angle: p.route.angle,
         ),
         tries: p.tries,
         lastTried: p.lastTried,
@@ -650,4 +807,15 @@ class _ProjectCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What you added to one climb in its details. Not rules, so the gym log
+/// keeps them beside sva_core's entries.
+class _ClimbDetails {
+  Set<String> holds = {};
+  Set<String> movement = {};
+  String beta = '';
+
+  /// Your own grade, for a climb you topped.
+  String? gradeId;
 }
