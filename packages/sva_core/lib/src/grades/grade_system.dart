@@ -82,6 +82,16 @@ final class GradeSystem {
     return best;
   }
 
+  /// [count] grades in a row around the one nearest to [score], for
+  /// picking your own grade for a climb: two easier and two harder by
+  /// default, shifted inwards at either end of the list.
+  List<Grade> around(double score, {int count = 5}) {
+    if (count >= grades.length) return grades;
+    final middle = grades.indexOf(nearest(score));
+    final from = (middle - count ~/ 2).clamp(0, grades.length - count);
+    return grades.sublist(from, from + count);
+  }
+
   /// The grade in this system that best matches [grade] from another
   /// system: the one whose span is closest to [grade]'s span, then the one
   /// that overlaps it most, then the one whose middle is nearest. On a full

@@ -27,4 +27,16 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test("M3-8: your own grade is picked from five around the climb's", () {
+    List<String> around(String label) => [
+      for (final g in font.around(font.parse(label)!.score)) g.label,
+    ];
+    expect(around('6A'), ['5', '5+', '6A', '6A+', '6B']);
+    // At either end the five shift inwards.
+    expect(around('3'), [for (final g in font.grades.take(5)) g.label]);
+    expect(around(font.grades.last.label), [
+      for (final g in font.grades.skip(font.grades.length - 5)) g.label,
+    ]);
+  });
 }
