@@ -819,9 +819,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String logIndoorDetailsHold(String colour, String kind) {
-    return '$colour $kind med detaljer';
-  }
+  String get logIndoorAddDetails => 'Legg til detaljer';
 
   @override
   String get logIndoorResult => 'Resultat';
@@ -834,6 +832,10 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get logIndoorResultRests => 'Toppet med hvil';
+
+  @override
+  String get logIndoorRestsWhy =>
+      'Du hvilte i tauet, så det teller som et forsøk, ikke en bestigning. Den er fortsatt et prosjekt til du klatrer den rent.';
 
   @override
   String get logIndoorMyGrade => 'Din grad';
@@ -863,7 +865,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logIndoorBeta => 'Beta';
 
   @override
-  String get logIndoorBetaHint => 'Hælhook på volumet, så venstre liste';
+  String get logIndoorBetaHint => 'Hælkrok på volumet, så venstre list';
 
   @override
   String get logIndoorBetaNote => 'Bare du ser betaen.';

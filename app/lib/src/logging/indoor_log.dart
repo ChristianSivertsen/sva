@@ -572,10 +572,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
           if (tiles.isEmpty)
             message(l10n.logIndoorNoTiles)
           else ...[
-            Text(
-              '${l10n.logIndoorTapHint} ${l10n.logIndoorHoldHint}',
-              style: muted,
-            ),
+            Text(l10n.logIndoorTapHint, style: muted),
+            Text(l10n.logIndoorHoldHint, style: muted),
             const SizedBox(height: SvaSpace.xs),
             Wrap(
               spacing: SvaSpace.xs,
@@ -593,6 +591,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                       _tap(gymId, wall, tile);
                       openDetails(_log.entries.length - 1);
                     },
+                    longPressHint: l10n.logIndoorAddDetails,
                   ),
               ],
             ),
@@ -632,18 +631,24 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
                 Expanded(
                   child: Semantics(
                     button: true,
-                    label: l10n.logIndoorDetailsLabel(
-                      labelOf(_log.routes[e.route]),
-                      wallName(_log.routes[e.route].wallId) ?? '',
-                    ),
+                    label: switch (wallName(_log.routes[e.route].wallId)) {
+                      final wall? => l10n.logIndoorDetailsLabel(
+                        labelOf(_log.routes[e.route]),
+                        wall,
+                      ),
+                      // A wall removed since: the climb alone.
+                      null => labelOf(_log.routes[e.route]),
+                    },
                     onTap: () => openDetails(i),
                     excludeSemantics: true,
                     child: InkWell(
                       onTap: () => openDetails(i),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: SvaSpace.xs,
+                      // Big enough to hit (docs/DESIGN.md, touch targets).
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minHeight: kMinInteractiveDimension,
                         ),
+                        alignment: AlignmentDirectional.centerStart,
                         child: Text(
                           [
                             labelOf(_log.routes[e.route]),

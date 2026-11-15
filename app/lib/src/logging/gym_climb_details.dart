@@ -73,7 +73,7 @@ class GymClimbDetails extends StatelessWidget {
   final ValueChanged<int> onTries;
   final ValueChanged<String> onRopeType;
   final ValueChanged<String> onWall;
-  final ValueChanged<String?> onAngle;
+  final ValueChanged<String> onAngle;
   final ValueChanged<String?> onGrade;
   final ValueChanged<Set<String>> onHolds;
   final ValueChanged<Set<String>> onMovement;
@@ -94,20 +94,37 @@ class GymClimbDetails extends StatelessWidget {
         (value, l10n.attributeValue(value.replaceAll('.', '_'))),
     ];
 
+    // Close on the left, the title in the middle and Done always in view
+    // (docs/DESIGN.md, Sheet).
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(SvaSpace.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: SvaSpace.md,
-          children: [
-            Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SvaSpace.xs,
+              SvaSpace.xs,
+              SvaSpace.md,
+              0,
+            ),
+            child: Row(
+              spacing: SvaSpace.xs,
               children: [
+                IconButton(
+                  tooltip: l10n.close,
+                  onPressed: onDone,
+                  icon: const Icon(LucideIcons.x),
+                ),
                 Expanded(
                   child: Semantics(
                     header: true,
-                    child: Text(title, style: text.headline),
+                    child: Text(
+                      title,
+                      style: text.headline,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
                 SvaStyleTag(
@@ -116,136 +133,161 @@ class GymClimbDetails extends StatelessWidget {
                 ),
               ],
             ),
-            ChipGroup(
-              label: l10n.logIndoorResult,
-              options: [
-                if (rope) ...[
-                  ('send', l10n.logIndoorResultClean),
-                  ('rests', l10n.logIndoorResultRests),
-                ] else
-                  ('send', l10n.logIndoorResultTopped),
-                ('no', l10n.logIndoorDidntTop),
-              ],
-              selected: {climbResult(entry)},
-              onChanged: (v) {
-                if (v.isNotEmpty) onResult(v.single);
-              },
-            ),
-            if (entry.topped && grades.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: SvaSpace.xs,
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(SvaSpace.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: SvaSpace.md,
                 children: [
                   ChipGroup(
-                    label: l10n.logIndoorMyGrade,
-                    options: grades,
-                    selected: {?gradeId},
-                    // Tap the picked grade again to clear it.
-                    onChanged: (v) => onGrade(v.firstOrNull),
+                    label: l10n.logIndoorResult,
+                    options: [
+                      if (rope) ...[
+                        ('send', l10n.logIndoorResultClean),
+                        ('rests', l10n.logIndoorResultRests),
+                      ] else
+                        ('send', l10n.logIndoorResultTopped),
+                      ('no', l10n.logIndoorDidntTop),
+                    ],
+                    selected: {climbResult(entry)},
+                    onChanged: (v) {
+                      if (v.isNotEmpty) onResult(v.single);
+                    },
                   ),
-                  Text(l10n.logIndoorMyGradeHint, style: muted),
+                  if (entry.topped && entry.rested)
+                    Text(l10n.logIndoorRestsWhy, style: muted),
+                  if (entry.topped && grades.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: SvaSpace.xs,
+                      children: [
+                        ChipGroup(
+                          label: l10n.logIndoorMyGrade,
+                          options: grades,
+                          selected: {?gradeId},
+                          // Tap the picked grade again to clear it.
+                          onChanged: (v) => onGrade(v.firstOrNull),
+                        ),
+                        Text(l10n.logIndoorMyGradeHint, style: muted),
+                      ],
+                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(l10n.logIndoorTries, style: text.label),
+                      ),
+                      IconButton(
+                        tooltip: l10n.logIndoorFewerTries,
+                        onPressed: entry.tries > 1
+                            ? () => onTries(entry.tries - 1)
+                            : null,
+                        icon: const Icon(LucideIcons.minus),
+                      ),
+                      Text('${entry.tries}', style: text.number),
+                      IconButton(
+                        tooltip: l10n.logIndoorMoreTries,
+                        onPressed: entry.tries < maxTriesPerTap
+                            ? () => onTries(entry.tries + 1)
+                            : null,
+                        icon: const Icon(LucideIcons.plus),
+                      ),
+                    ],
+                  ),
+                  if (entry.ropeType case final type?)
+                    ChipGroup(
+                      label: l10n.logIndoorRopeType,
+                      options: [
+                        for (final t in const ['lead', 'toprope'])
+                          (t, l10n.ascentType(t)),
+                      ],
+                      selected: {type},
+                      onChanged: (v) {
+                        if (v.isNotEmpty) onRopeType(v.single);
+                      },
+                    ),
+                  if (walls.length > 1)
+                    ChipGroup(
+                      label: l10n.logIndoorWall,
+                      options: walls,
+                      selected: {wallId},
+                      onChanged: (v) {
+                        if (v.isNotEmpty) onWall(v.single);
+                      },
+                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: SvaSpace.xs,
+                    children: [
+                      ChipGroup(
+                        label: l10n.logIndoorAngle,
+                        options: options('angle'),
+                        selected: {?angle},
+                        // A climb always has an angle: tapping it again
+                        // keeps it.
+                        onChanged: (v) {
+                          if (v.isNotEmpty) onAngle(v.single);
+                        },
+                      ),
+                      if (angle != null && angle == wallAngle)
+                        Text(l10n.logIndoorAngleFromWall, style: muted),
+                    ],
+                  ),
+                  ChipGroup(
+                    label: l10n.logIndoorHolds,
+                    options: options('climb_hold'),
+                    selected: holds,
+                    multi: true,
+                    onChanged: onHolds,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: SvaSpace.xs,
+                    children: [
+                      ChipGroup(
+                        label: l10n.logIndoorMovement,
+                        options: options('movement'),
+                        selected: movement,
+                        multi: true,
+                        onChanged: onMovement,
+                      ),
+                      Text(l10n.logIndoorStyleNote, style: muted),
+                    ],
+                  ),
+                  TextFormField(
+                    initialValue: beta,
+                    decoration: InputDecoration(
+                      labelText: l10n.logIndoorBeta,
+                      hintText: l10n.logIndoorBetaHint,
+                      helperText: l10n.logIndoorBetaNote,
+                    ),
+                    maxLength: maxBetaLength,
+                    minLines: 2,
+                    maxLines: 5,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: onBeta,
+                  ),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colors.danger,
+                      side: BorderSide(color: colors.danger),
+                    ),
+                    onPressed: onRemove,
+                    child: Text(l10n.logIndoorRemoveClimb),
+                  ),
                 ],
               ),
-            Row(
-              children: [
-                Expanded(child: Text(l10n.logIndoorTries, style: text.label)),
-                IconButton(
-                  tooltip: l10n.logIndoorFewerTries,
-                  onPressed: entry.tries > 1
-                      ? () => onTries(entry.tries - 1)
-                      : null,
-                  icon: const Icon(LucideIcons.minus),
-                ),
-                Text('${entry.tries}', style: text.number),
-                IconButton(
-                  tooltip: l10n.logIndoorMoreTries,
-                  onPressed: entry.tries < maxTriesPerTap
-                      ? () => onTries(entry.tries + 1)
-                      : null,
-                  icon: const Icon(LucideIcons.plus),
-                ),
-              ],
             ),
-            if (entry.ropeType case final type?)
-              ChipGroup(
-                label: l10n.logIndoorRopeType,
-                options: [
-                  for (final t in const ['lead', 'toprope'])
-                    (t, l10n.ascentType(t)),
-                ],
-                selected: {type},
-                onChanged: (v) {
-                  if (v.isNotEmpty) onRopeType(v.single);
-                },
-              ),
-            if (walls.length > 1)
-              ChipGroup(
-                label: l10n.logIndoorWall,
-                options: walls,
-                selected: {wallId},
-                onChanged: (v) {
-                  if (v.isNotEmpty) onWall(v.single);
-                },
-              ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: SvaSpace.xs,
-              children: [
-                ChipGroup(
-                  label: l10n.logIndoorAngle,
-                  options: options('angle'),
-                  selected: {?angle},
-                  onChanged: (v) => onAngle(v.firstOrNull),
-                ),
-                if (angle != null && angle == wallAngle)
-                  Text(l10n.logIndoorAngleFromWall, style: muted),
-              ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(SvaSpace.md),
+            child: FilledButton(
+              onPressed: onDone,
+              child: Text(l10n.logIndoorDone),
             ),
-            ChipGroup(
-              label: l10n.logIndoorHolds,
-              options: options('climb_hold'),
-              selected: holds,
-              multi: true,
-              onChanged: onHolds,
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: SvaSpace.xs,
-              children: [
-                ChipGroup(
-                  label: l10n.logIndoorMovement,
-                  options: options('movement'),
-                  selected: movement,
-                  multi: true,
-                  onChanged: onMovement,
-                ),
-                Text(l10n.logIndoorStyleNote, style: muted),
-              ],
-            ),
-            TextFormField(
-              initialValue: beta,
-              decoration: InputDecoration(
-                labelText: l10n.logIndoorBeta,
-                hintText: l10n.logIndoorBetaHint,
-                helperText: l10n.logIndoorBetaNote,
-              ),
-              maxLength: maxBetaLength,
-              minLines: 2,
-              maxLines: 5,
-              textCapitalization: TextCapitalization.sentences,
-              onChanged: onBeta,
-            ),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colors.danger,
-                side: BorderSide(color: colors.danger),
-              ),
-              onPressed: onRemove,
-              child: Text(l10n.logIndoorRemoveClimb),
-            ),
-            FilledButton(onPressed: onDone, child: Text(l10n.logIndoorDone)),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

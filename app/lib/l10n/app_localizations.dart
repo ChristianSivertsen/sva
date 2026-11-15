@@ -1154,11 +1154,11 @@ abstract class AppLocalizations {
   /// **'Details for {colour} on {wall}'**
   String logIndoorDetailsLabel(String colour, String wall);
 
-  /// No description provided for @logIndoorDetailsHold.
+  /// No description provided for @logIndoorAddDetails.
   ///
   /// In en, this message translates to:
-  /// **'{colour} {kind} with details'**
-  String logIndoorDetailsHold(String colour, String kind);
+  /// **'Add details'**
+  String get logIndoorAddDetails;
 
   /// No description provided for @logIndoorResult.
   ///
@@ -1183,6 +1183,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Topped with rests'**
   String get logIndoorResultRests;
+
+  /// No description provided for @logIndoorRestsWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'You rested on the rope, so it counts as a try, not a send. It stays a project until you climb it clean.'**
+  String get logIndoorRestsWhy;
 
   /// No description provided for @logIndoorMyGrade.
   ///

@@ -513,6 +513,8 @@ void main() {
     );
     await inDetails('6A');
     await inDetails('Roof');
+    // A climb always has an angle: tapping it again keeps it.
+    await inDetails('Roof');
     await inDetails('Crimps');
     await inDetails('Dyno');
     await tester.enterText(
@@ -563,5 +565,60 @@ void main() {
       find.descendant(of: sheet, matching: find.text('Remove climb')),
     );
     expect(inSheet(find.text('Save session')), findsNothing);
+  });
+
+  testWidgets('M3-8: details stay with their climb, and moving the latest '
+      'climb moves the log', (tester) async {
+    await open(
+      tester,
+      colours: [
+        _colours.first,
+        _colours.last.copyWith(
+          boulderMinScore: Value(font.parse('5+')!.scoreLow),
+          boulderMaxScore: Value(font.parse('6B')!.scoreHigh),
+        ),
+      ],
+    );
+    final sheet = find.byType(GymClimbDetails);
+    Future<void> inDetails(String label) =>
+        tap(tester, find.descendant(of: sheet, matching: find.text(label)));
+    Future<void> details(String label) async {
+      tester.semantics.tap(find.semantics.byLabel(label));
+      await tester.pumpAndSettle();
+    }
+
+    // A blue with beta, then a green: removing the blue takes its beta
+    // with it.
+    await tap(tester, tile('Blue'));
+    await details('Details for Blue on Cave');
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextFormField)),
+      'Blue beta',
+    );
+    await inDetails('Done');
+    await tap(tester, tile('Green'));
+    await tap(tester, inSheet(find.byTooltip('Remove Blue')));
+
+    // The green was on the board, not the cave: the log follows it there.
+    await details('Details for Green on Cave');
+    await inDetails('Board');
+    await inDetails('Done');
+    await tap(tester, tile('Blue'));
+
+    // A grade picked for a climb you then didn't top is dropped.
+    await details('Details for Blue on Board');
+    await inDetails('6A');
+    await inDetails("Didn't top");
+    await inDetails('Done');
+    await tap(tester, inSheet(find.text('Save session (2 climbs)')));
+
+    final saved = logger.saved!;
+    expect(
+      [for (final r in saved.routes) (r.wallId, r.angle)],
+      [('board', null), ('board', null)],
+      reason: "the wall's own angle is not saved again",
+    );
+    expect([for (final c in saved.climbs) c.beta], ['', '']);
+    expect(saved.climbs.last.personalGradeId, isNull);
   });
 }

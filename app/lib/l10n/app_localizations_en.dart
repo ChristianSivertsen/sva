@@ -816,9 +816,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String logIndoorDetailsHold(String colour, String kind) {
-    return '$colour $kind with details';
-  }
+  String get logIndoorAddDetails => 'Add details';
 
   @override
   String get logIndoorResult => 'Result';
@@ -831,6 +829,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logIndoorResultRests => 'Topped with rests';
+
+  @override
+  String get logIndoorRestsWhy =>
+      'You rested on the rope, so it counts as a try, not a send. It stays a project until you climb it clean.';
 
   @override
   String get logIndoorMyGrade => 'Your grade';

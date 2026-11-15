@@ -521,21 +521,12 @@
       }
     }
   },
-  "logIndoorDetailsHold": "{colour} {kind} with details",
-  "@logIndoorDetailsHold": {
-    "placeholders": {
-      "colour": {
-        "type": "String"
-      },
-      "kind": {
-        "type": "String"
-      }
-    }
-  },
+  "logIndoorAddDetails": "Add details",
   "logIndoorResult": "Result",
   "logIndoorResultTopped": "Topped",
   "logIndoorResultClean": "Topped clean",
   "logIndoorResultRests": "Topped with rests",
+  "logIndoorRestsWhy": "You rested on the rope, so it counts as a try, not a send. It stays a project until you climb it clean.",
   "logIndoorMyGrade": "Your grade",
   "logIndoorMyGradeHint": "Leave it empty if it felt like the gym's grade.",
   "logIndoorAngle": "Angle",
