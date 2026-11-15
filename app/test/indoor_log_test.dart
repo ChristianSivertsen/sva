@@ -209,12 +209,19 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Finishes the session and saves it as the finish sheet fills it in.
+  Future<void> finish(WidgetTester tester) async {
+    await tap(tester, inSheet(find.text('Finish')));
+    await tap(tester, find.text('Save session'));
+  }
+
   testWidgets('M3-4: logging a gym climb takes 3 taps when the wall and '
       'type are already chosen', (tester) async {
     await open(tester);
-    // The log button was tap 1.
+    // The log button was tap 1, then the tile and Finish. Saving from the
+    // finish sheet is one more (M3-8).
     await tap(tester, tile('Blue'));
-    await tap(tester, inSheet(find.text('Save session')));
+    await finish(tester);
 
     final saved = logger.saved!;
     expect(saved.gymId, 'g1');
@@ -266,7 +273,7 @@ void main() {
       isNull,
     );
     expect(inSheet(find.text('This session · 3 climbs')), findsOneWidget);
-    await tap(tester, inSheet(find.text('Save session (3 climbs)')));
+    await finish(tester);
 
     final saved = logger.saved!;
     expect(
@@ -290,7 +297,7 @@ void main() {
     expect(inSheet(find.byType(SegmentedButton<String>)), findsNothing);
     await tap(tester, tile('Green'));
     expect(inSheet(find.widgetWithText(FilterChip, 'Lead')), findsOneWidget);
-    await tap(tester, inSheet(find.text('Save session')));
+    await finish(tester);
     expect(logger.saved!.climbs.single.ascentType, 'lead');
   });
 
@@ -298,7 +305,7 @@ void main() {
     await open(tester, grading: 'standard');
     // Font grades, the boulder system in settings.
     await tap(tester, tile('6A'));
-    await tap(tester, inSheet(find.text('Save session')));
+    await finish(tester);
     expect(logger.saved!.routes.single.gradeId, seedId('grade:font:6A'));
     expect(logger.saved!.routes.single.colourId, isNull);
   });
@@ -306,7 +313,7 @@ void main() {
   testWidgets('M3-4: an ungraded gym has one tile', (tester) async {
     await open(tester, grading: 'none');
     await tap(tester, tile('Climb'));
-    await tap(tester, inSheet(find.text('Save session')));
+    await finish(tester);
     final route = logger.saved!.routes.single;
     expect((route.colourId, route.gradeId), (null, null));
   });
@@ -424,7 +431,7 @@ void main() {
     // A blue in the cave tapped as a new one was the other project.
     await tap(tester, tile('Blue'));
     await tap(tester, inSheet(find.text('Your blue project from 5 Nov 2026')));
-    await tap(tester, inSheet(find.text('Save session (2 climbs)')));
+    await finish(tester);
 
     // Which style each climb gets is sva_core's; here, that each lands on
     // its project's route.
@@ -529,7 +536,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Heel hook on the volume'), findsOneWidget);
     await inDetails('Done');
-    await tap(tester, inSheet(find.text('Save session')));
+    await finish(tester);
 
     final saved = logger.saved!;
     expect(saved.routes.single.angle, 'angle.roof');
@@ -564,7 +571,7 @@ void main() {
       tester,
       find.descendant(of: sheet, matching: find.text('Remove climb')),
     );
-    expect(inSheet(find.text('Save session')), findsNothing);
+    expect(inSheet(find.text('Finish')), findsNothing);
   });
 
   testWidgets('M3-8: details stay with their climb, and moving the latest '
@@ -610,7 +617,7 @@ void main() {
     await inDetails('6A');
     await inDetails("Didn't top");
     await inDetails('Done');
-    await tap(tester, inSheet(find.text('Save session (2 climbs)')));
+    await finish(tester);
 
     final saved = logger.saved!;
     expect(
@@ -620,5 +627,83 @@ void main() {
     );
     expect([for (final c in saved.climbs) c.beta], ['', '']);
     expect(saved.climbs.last.personalGradeId, isNull);
+  });
+
+  String dayOf(DateTime d) =>
+      '${d.year}-${'${d.month}'.padLeft(2, '0')}-${'${d.day}'.padLeft(2, '0')}';
+
+  testWidgets('M3-8: a past session saves on the day picked', (tester) async {
+    await open(tester);
+    await tap(tester, inSheet(find.text('Log a past session')));
+    expect(inSheet(find.text('Past session')), findsOneWidget);
+    await tap(tester, inSheet(find.widgetWithText(FilterChip, 'Yesterday')));
+    await tap(tester, tile('Blue'));
+    await finish(tester);
+
+    final saved = logger.saved!;
+    final yesterday = DateUtils.addDaysToDate(
+      DateUtils.dateOnly(DateTime.now()),
+      -1,
+    );
+    expect(saved.localDate, dayOf(yesterday));
+    expect((saved.startAt, saved.endAt), (null, null), reason: 'no timer');
+  });
+
+  testWidgets('M3-8: a live session runs from its first climb to Finish, '
+      'and the finish sheet sums it up', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await open(tester, projects: [_project('p1')]);
+    expect(
+      inSheet(find.text('Live · starts with your first climb')),
+      findsOneWidget,
+    );
+    final before = DateTime.now();
+    await tap(tester, tile('Green'));
+    expect(inSheet(find.textContaining('Live · since')), findsOneWidget);
+
+    // Sent the blue project, then fell on a blue on the main wall.
+    tester.semantics.tap(
+      find.semantics.byLabel('Sent your Blue project on Cave'),
+    );
+    await tester.pumpAndSettle();
+    await tap(tester, inSheet(find.text('Rope')));
+    await tap(tester, tile('Blue'));
+    await tap(tester, inSheet(find.text("Didn't top")));
+
+    await tap(tester, inSheet(find.text('Finish')));
+    expect(find.text('Finish session'), findsOneWidget);
+    expect(find.text('On rope'), findsOneWidget, reason: '15 m of falls');
+    expect(
+      find.textContaining('Project sent: Blue · Cave · try 4'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Green B: 1 flash, 0 redpoint, 0 repeat, 0 attempt',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel('Blue R: 0 flash, 0 redpoint, 0 repeat, 1 attempt'),
+      findsOneWidget,
+    );
+    const autoTitle = '2 boulders · 1 route · best Blue, boulder';
+    expect(find.text('Leave it empty to use “$autoTitle”.'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Partners'),
+      'Ingrid, Ola',
+    );
+    await tap(tester, find.text('Everyone'));
+    await tap(tester, find.text('Save session'));
+
+    final saved = logger.saved!;
+    expect(saved.title, autoTitle, reason: 'left empty');
+    expect(saved.partners.map((p) => p.trim()), ['Ingrid', 'Ola']);
+    expect(saved.visibility, 'public');
+    expect(saved.localDate, dayOf(DateTime.now()));
+    expect(saved.startAt!.isBefore(before), isFalse);
+    expect(saved.endAt!.isBefore(saved.startAt!), isFalse);
+    expect(find.text('Session saved'), findsOneWidget);
+    semantics.dispose();
   });
 }

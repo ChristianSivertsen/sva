@@ -149,13 +149,14 @@ class SvaSessionCard extends StatelessWidget {
                     Wrap(
                       spacing: SvaSpace.xl,
                       runSpacing: SvaSpace.xs,
-                      children: [for (final stat in stats) _Stat(stat)],
+                      children: [for (final stat in stats) SvaStat(stat)],
                     )
                   else
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final stat in stats) Expanded(child: _Stat(stat)),
+                        for (final stat in stats)
+                          Expanded(child: SvaStat(stat)),
                         // Stats keep their quarter width when some are
                         // unknown, so they line up from card to card.
                         for (var i = stats.length; i < 4; i++) const Spacer(),
@@ -205,8 +206,9 @@ class _ClimbRow extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  const new(this.stat);
+/// One number over its label, as in a [SvaSessionCard]'s stats row.
+class SvaStat extends StatelessWidget {
+  const new(this.stat, {super.key});
 
   final SvaCardStat stat;
 

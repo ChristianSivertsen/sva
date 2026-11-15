@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
 import 'package:sva/src/logging/gym_climb_details.dart';
+import 'package:sva/src/logging/gym_finish_sheet.dart';
 import 'package:sva/src/logging/gym_tap_card.dart';
 import 'package:sva/src/logging/gym_tiles.dart';
 import 'package:sva/src/logging/here.dart';
@@ -23,6 +25,7 @@ import 'package:sva_core/sva_core.dart'
         GymPastRoute,
         GymRouteKey,
         GymSessionLog,
+        GymSessionSummaryOf,
         nearestWithin;
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
@@ -55,7 +58,41 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
 
   /// The details of each of [_log]'s entries, in the same order.
   final _details = <_ClimbDetails>[];
-  var _saving = false;
+
+  /// Live, the session starts with its first climb and ends at Finish.
+  /// Otherwise it is logged afterwards, on [_day], with no times.
+  var _live = true;
+  DateTime? _startedAt;
+  DateTime _day = DateUtils.dateOnly(DateTime.now());
+
+  /// Keeps a live session's minutes current.
+  late final Timer _clock;
+
+  @override
+  void initState() {
+    super.initState();
+    _clock = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_live && _startedAt != null) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _clock.cancel();
+    super.dispose();
+  }
+
+  /// Picks a day other than today or yesterday for a past session.
+  Future<void> _pickDay() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _day,
+      firstDate: DateTime(1950),
+      lastDate: today,
+    );
+    if (picked != null && mounted) setState(() => _day = picked);
+  }
 
   /// The gym to log at: the one picked (or pinned by the first climb),
   /// else the one you are at, else the one logged at last, else the first
@@ -97,6 +134,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
       angle: wall.angle,
     );
     setState(() {
+      if (_live) _startedAt ??= DateTime.now();
       // The session stays at this gym once it has a climb.
       _gymId = gymId;
       _log = _log.tap(key, ropeType: wall.kind == 'rope' ? _ropeType : null);
@@ -105,6 +143,7 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
   }
 
   void _sendProject(String gymId, GymPastRoute project) => setState(() {
+    if (_live) _startedAt ??= DateTime.now();
     _gymId = gymId;
     _log = _log.sendProject(
       project.id,
@@ -166,6 +205,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
   void _remove(int index) => setState(() {
     _log = _log.remove(index);
     _details.removeAt(index);
+    // Live, the next first climb starts it again.
+    if (_log.entries.isEmpty) _startedAt = null;
   });
 
   void _update(
@@ -185,22 +226,33 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
     );
   });
 
-  Future<void> _save(String gymId, GymSetup setup) async {
+  /// Saves the session with what was filled in when finishing; `false`
+  /// when it wasn't saved.
+  Future<bool> _save(
+    String gymId,
+    GymSetup setup,
+    GymFinishChoices choices, {
+    required String autoTitle,
+  }) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final climbs = _log.climbs;
-    setState(() => _saving = true);
+    final now = DateTime.now();
+    final startAt = _live ? (_startedAt ?? now) : null;
+    final day = startAt ?? _day;
     try {
       await ref
           .read(sessionLoggerProvider)
           .logIndoor(
             IndoorSessionDraft(
               gymId: gymId,
-              localDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-              tz: deviceTimeZone(DateTime.now().timeZoneOffset),
-              visibility:
-                  ref.read(settingsProvider).value?.defaultVisibility ??
-                  const Settings().defaultVisibility,
+              localDate: DateFormat('yyyy-MM-dd').format(day),
+              tz: deviceTimeZone(day.timeZoneOffset),
+              visibility: choices.visibility,
+              title: choices.title ?? autoTitle,
+              partners: choices.partners,
+              startAt: startAt,
+              endAt: startAt == null ? null : now,
               routes: [
                 for (final (i, GymRouteKey r) in _log.routes.indexed)
                   if (_log.routeIds[i] case final id?)
@@ -238,17 +290,16 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
             ),
             userId: ref.read(currentUserIdProvider),
           );
-      widget.onSaved();
       messenger.showSnackBar(SnackBar(content: Text(l10n.logSaved)));
+      return true;
     } on ClimbRejected catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.logClimbRejected(e.index + 1))),
       );
-      if (mounted) setState(() => _saving = false);
     } on Object {
       messenger.showSnackBar(SnackBar(content: Text(l10n.formSaveFailed)));
-      if (mounted) setState(() => _saving = false);
     }
+    return false;
   }
 
   /// The other climbs entry [index], shown as [colour], might be, and a
@@ -478,6 +529,150 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
       ),
     );
 
+    final time = DateFormat.Hm(l10n.localeName);
+    final today = DateUtils.dateOnly(DateTime.now());
+    String dayOf(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
+
+    // Finishing: how the session went, then what you fill in.
+    void openFinish() {
+      final s = _log.summary(
+        heightM: (id) =>
+            setup.walls.where((w) => w.id == id).firstOrNull?.heightM,
+        // Tiles go from easy to hard.
+        rank: (key) {
+          final i = tilesFor(key.kind).indexWhere(
+            (t) => t.colourId == key.colourId && t.gradeId == key.gradeId,
+          );
+          return i < 0 ? null : i;
+        },
+      );
+      final bothKinds = s.boulders > 0 && s.ropes > 0;
+      // Boulders and routes share a gym's colours, so a mixed session says
+      // which.
+      String kindLabel(GymRouteKey key) => bothKinds && key.colourId != null
+          ? l10n.logIndoorDetailsTitle(
+              labelOf(key),
+              l10n.logIndoorKind(key.kind),
+            )
+          : labelOf(key);
+      final best = [
+        for (final k in const ['boulder', 'rope'])
+          if (s.best[k] case final key?) kindLabel(key),
+      ];
+      final autoTitle = [
+        if (s.boulders > 0) l10n.logFinishBoulders(s.boulders),
+        if (s.ropes > 0) l10n.logFinishRoutes(s.ropes),
+        if (best.isNotEmpty) l10n.logFinishBestOf(best.join(' / ')),
+      ].join(' · ');
+      final day = _live ? today : _day;
+      final started = _startedAt;
+      unawaited(
+        showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (sheetContext) => GymFinishSheet(
+            stats: [
+              SvaCardStat(
+                value: number.format(s.climbs),
+                label: l10n.logFinishClimbs,
+              ),
+              SvaCardStat(
+                value: number.format(s.sends),
+                label: l10n.logFinishSends,
+              ),
+              SvaCardStat(
+                value: number.format(s.flashes),
+                label: l10n.logFinishFlashes,
+              ),
+              if (s.metres case final m?)
+                SvaCardStat(
+                  value: number.format(m.round()),
+                  unit: l10n.feedStatMetres,
+                  label: l10n.logFinishOnRope,
+                )
+              else
+                SvaCardStat(
+                  value: switch (s.best['boulder'] ?? s.best['rope']) {
+                    final key? => labelOf(key),
+                    null => '–',
+                  },
+                  label: l10n.logFinishBest,
+                ),
+            ],
+            projectSends: [
+              for (final p in s.projectSends)
+                () {
+                  final key = _log.routes[_log.entries[p.index].route];
+                  return l10n.logFinishProjectSent(
+                    labelOf(key),
+                    wallName(key.wallId) ?? '',
+                    p.tries,
+                    // Rounded, as a day with a clock change is not 24 hours.
+                    (day.difference(DateTime.parse(p.lastTried)).inHours / 24)
+                        .round(),
+                  );
+                }(),
+            ],
+            bars: [
+              for (final g in s.grades)
+                () {
+                  final label = labelOf((
+                    wallId: '',
+                    kind: g.kind,
+                    colourId: g.colourId,
+                    gradeId: g.gradeId,
+                    angle: null,
+                  ));
+                  return (
+                    label: bothKinds
+                        ? '$label ${l10n.logFinishKindShort(g.kind)}'
+                        : label,
+                    flash: g.flash,
+                    redpoint: g.redpoint,
+                    repeat: g.repeat,
+                    attempt: g.attempt,
+                  );
+                }(),
+            ],
+            bothKinds: bothKinds,
+            filledIn: [
+              setup.gym.name,
+              if (_live && started != null)
+                '${time.format(started)}–${time.format(DateTime.now())}'
+              else
+                formatDay(l10n, dayOf(_day)),
+            ].join(' · '),
+            autoTitle: autoTitle,
+            visibility:
+                ref.read(settingsProvider).value?.defaultVisibility ??
+                const Settings().defaultVisibility,
+            onClose: () => Navigator.pop(sheetContext),
+            onSave: (choices) async {
+              final saved = await _save(
+                gymId,
+                setup,
+                choices,
+                autoTitle: autoTitle,
+              );
+              if (saved) {
+                if (sheetContext.mounted) Navigator.pop(sheetContext);
+                widget.onSaved();
+              }
+              return saved;
+            },
+          ),
+        ),
+      );
+    }
+
+    final yesterday = DateUtils.addDaysToDate(today, -1);
+    final dayKey = _day == today
+        ? 'today'
+        : _day == yesterday
+        ? 'yesterday'
+        : 'other';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -499,6 +694,56 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
         ] else
           Text(setup.gym.name, style: text.headline),
         if (foundHere) Text(l10n.logIndoorFoundHere, style: muted),
+        // Live, or logged afterwards on a day you pick (prototype,
+        // "Log a past gym session").
+        Row(
+          children: [
+            Expanded(
+              child: Text(switch ((_live, _startedAt)) {
+                (true, final t?) => l10n.logIndoorLive(
+                  time.format(t),
+                  max(1, DateTime.now().difference(t).inMinutes),
+                ),
+                (true, null) => l10n.logIndoorLiveWaiting,
+                (false, _) => l10n.logIndoorPast,
+              }, style: muted),
+            ),
+            TextButton(
+              onPressed: () => setState(() {
+                _live = !_live;
+                _day = today;
+                // Back to live with climbs logged: it runs from now.
+                _startedAt = _live && entries.isNotEmpty
+                    ? DateTime.now()
+                    : null;
+              }),
+              child: Text(
+                _live ? l10n.logIndoorLogPast : l10n.logIndoorLogLive,
+              ),
+            ),
+          ],
+        ),
+        if (!_live)
+          ChipGroup(
+            label: l10n.logIndoorDay,
+            options: [
+              ('today', l10n.logIndoorToday),
+              ('yesterday', l10n.logIndoorYesterday),
+              (
+                'other',
+                dayKey == 'other'
+                    ? formatDay(l10n, dayOf(_day))
+                    : l10n.logIndoorOtherDay,
+              ),
+            ],
+            selected: {dayKey},
+            onChanged: (v) => switch (v.firstOrNull) {
+              'today' => setState(() => _day = today),
+              'yesterday' => setState(() => _day = yesterday),
+              // Another day, or the one picked tapped again to change it.
+              _ => unawaited(_pickDay()),
+            },
+          ),
         formGap,
         if (kind == null || wall == null)
           message(l10n.logIndoorNoWalls)
@@ -673,8 +918,8 @@ class _IndoorLogState extends ConsumerState<IndoorLog> {
             ),
           formGap,
           FilledButton(
-            onPressed: _saving ? null : () => _save(gymId, setup),
-            child: Text(l10n.logSave(entries.length)),
+            onPressed: openFinish,
+            child: Text(l10n.logIndoorFinish),
           ),
         ],
       ],
