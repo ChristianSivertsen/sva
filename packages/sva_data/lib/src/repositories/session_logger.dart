@@ -161,6 +161,9 @@ final class IndoorSessionDraft {
     required this.routes,
     required this.climbs,
     this.title,
+    this.partners = const [],
+    this.startAt,
+    this.endAt,
   });
 
   final String gymId;
@@ -176,6 +179,14 @@ final class IndoorSessionDraft {
   /// In the order they were climbed.
   final List<IndoorClimbDraft> climbs;
   final String? title;
+
+  /// Partners' names, stored on this device only until tagging (M13).
+  final List<String> partners;
+
+  /// When a live session started (its first climb) and ended (Finish);
+  /// both `null` for a session logged afterwards.
+  final DateTime? startAt;
+  final DateTime? endAt;
 }
 
 /// Thrown when a climb breaks the style and tries rules (M1-4).
@@ -294,12 +305,13 @@ class SessionLogger {
     }
     _checkDayAndZone(draft.localDate, draft.tz);
     checkVisibility(draft.visibility);
-    final (:title, description: _, partners: _) = await _checkSessionFields(
+    final (:title, description: _, :partners) = await _checkSessionFields(
       title: draft.title,
       description: null,
       conditions: null,
-      partners: const [],
+      partners: draft.partners,
     );
+    _checkTimes(draft.startAt, draft.endAt);
     for (final (i, route) in draft.routes.indexed) {
       if ((route.routeId == null) == (route.wallId == null)) {
         throw ArgumentError.value(i, 'routes', 'a route or a wall, not both');
@@ -424,6 +436,8 @@ class SessionLogger {
           tz: Value(draft.tz),
           visibility: Value(draft.visibility),
           title: Value(title),
+          startAt: Value(draft.startAt?.toUtc()),
+          endAt: Value(draft.endAt?.toUtc()),
         ),
         userId: userId,
       );
@@ -468,8 +482,23 @@ class SessionLogger {
               );
         }
       }
+      await _addPartners(sessionId, draft.visibility, partners, userId);
       return sessionId;
     });
+  }
+
+  /// A live session's times: both or neither, the end not before the
+  /// start, no longer than a day, and not in the future.
+  void _checkTimes(DateTime? startAt, DateTime? endAt) {
+    if (startAt == null && endAt == null) return;
+    if (startAt == null || endAt == null) {
+      throw ArgumentError.value(startAt ?? endAt, 'startAt', 'without an end');
+    }
+    if (endAt.isBefore(startAt) ||
+        endAt.difference(startAt) > const Duration(days: 1) ||
+        endAt.isAfter(clock().add(const Duration(minutes: 5)))) {
+      throw ArgumentError.value(endAt, 'endAt');
+    }
   }
 
   /// A real calendar day (no 30 February), not after tomorrow, which covers
