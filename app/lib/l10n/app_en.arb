@@ -979,5 +979,29 @@
         "type": "String"
       }
     }
+  },
+  "wallLabel": "{gym} · {count, plural, =1{1 climb} other{{count} climbs}}",
+  "@wallLabel": {
+    "description": "Corner label on an indoor session's wall image.",
+    "placeholders": {
+      "gym": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wallSemantics": "Wall at {gym} with {count, plural, =1{1 climb} other{{count} climbs}}",
+  "@wallSemantics": {
+    "description": "Screen reader label for an indoor session's wall image.",
+    "placeholders": {
+      "gym": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

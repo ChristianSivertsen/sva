@@ -4,14 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sva/l10n/app_localizations.dart';
 import 'package:sva/src/data/providers.dart';
+import 'package:sva/src/feed/session_wall.dart';
 import 'package:sva/src/places/grade_badge.dart';
 import 'package:sva/src/places/labels.dart';
 import 'package:sva/src/routes.dart';
 import 'package:sva_data/sva_data.dart';
 import 'package:sva_ui/sva_ui.dart';
 
-/// One session: its day, texts, partners and every climb, with edit and
-/// delete for the owner.
+/// One session: its wall image when indoors, its day, texts, partners and
+/// every climb, with edit and delete for the owner.
 class SessionScreen extends ConsumerStatefulWidget {
   const new({required this.sessionId, super.key});
 
@@ -164,6 +165,10 @@ class _SessionDetail extends ConsumerWidget {
         SvaSpace.xxl,
       ),
       children: [
+        if (climbs case final climbs? when session.setting == 'indoor') ...[
+          SessionWall(session: session, climbs: climbs),
+          const SizedBox(height: SvaSpace.md),
+        ],
         Semantics(
           header: true,
           child: Text(session.title ?? day, style: text.title),

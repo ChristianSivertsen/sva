@@ -1395,4 +1395,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String logFinishAnd(String first, String second) {
     return '$first and $second';
   }
+
+  @override
+  String wallLabel(String gym, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count climbs',
+      one: '1 climb',
+    );
+    return '$gym · $_temp0';
+  }
+
+  @override
+  String wallSemantics(String gym, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count climbs',
+      one: '1 climb',
+    );
+    return 'Wall at $gym with $_temp0';
+  }
 }

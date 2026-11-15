@@ -1969,6 +1969,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{first} and {second}'**
   String logFinishAnd(String first, String second);
+
+  /// Corner label on an indoor session's wall image.
+  ///
+  /// In en, this message translates to:
+  /// **'{gym} · {count, plural, =1{1 climb} other{{count} climbs}}'**
+  String wallLabel(String gym, int count);
+
+  /// Screen reader label for an indoor session's wall image.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall at {gym} with {count, plural, =1{1 climb} other{{count} climbs}}'**
+  String wallSemantics(String gym, int count);
 }
 
 class _AppLocalizationsDelegate

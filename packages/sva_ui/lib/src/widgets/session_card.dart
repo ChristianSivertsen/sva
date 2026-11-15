@@ -36,9 +36,9 @@ final class SvaCardStat {
   final String label;
 }
 
-/// A session in the feed: where and when, its texts, the climbs with
-/// style and grade, details as tags and a stats row (docs/DESIGN.md,
-/// Card). The whole card opens the session.
+/// A session in the feed: where and when, its texts and picture, the
+/// climbs with style and grade, details as tags and a stats row
+/// (docs/DESIGN.md, Card). The whole card opens the session.
 class SvaSessionCard extends StatelessWidget {
   const new({
     required this.place,
@@ -47,6 +47,7 @@ class SvaSessionCard extends StatelessWidget {
     required this.openLabel,
     this.title,
     this.description,
+    this.picture,
     this.note,
     this.more,
     this.tags = const [],
@@ -66,6 +67,10 @@ class SvaSessionCard extends StatelessWidget {
   final String? note;
   final String? title;
   final String? description;
+
+  /// What the session leads with: its topo or wall image
+  /// (docs/DESIGN.md, Card).
+  final Widget? picture;
   final List<SvaCardClimb> climbs;
 
   /// Says how many climbs are left out, such as `+2 more climbs`.
@@ -127,6 +132,7 @@ class SvaSessionCard extends StatelessWidget {
                         Text(description, style: text.body),
                     ],
                   ),
+                ?picture,
                 if (climbs.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

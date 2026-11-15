@@ -85,8 +85,11 @@ void main() {
       // Gym routes have no name: they show as their colour and wall.
       expect(await GymRouteRepository(db).label(caveBlue.id, userId: 'me'), (
         colour: 'Blue',
+        colourHex: '#2F6FD1',
         grade: null,
         gradeSystem: null,
+        gradeType: null,
+        gradeScore: null,
         wall: 'Cave',
       ));
       expect(
@@ -263,8 +266,11 @@ void main() {
     ).watchInSession(id).first).single.routeId;
     expect(await GymRouteRepository(db).label(route, userId: 'me'), (
       colour: null,
+      colourHex: null,
       grade: '6A',
       gradeSystem: 'font',
+      gradeType: 'boulder',
+      gradeScore: 14.0,
       wall: 'Cave',
     ));
   });
