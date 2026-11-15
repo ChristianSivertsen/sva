@@ -96,7 +96,12 @@ void main() {
       reason: 'seeded ids are the same on every device',
     );
     final ascentDefs = await repo.definitions(level: AttributeLevel.ascent);
-    expect(ascentDefs.map((d) => d.key), ['feel', 'tag']);
+    expect(ascentDefs.map((d) => d.key), [
+      'feel',
+      'tag',
+      'climb_hold',
+      'movement',
+    ]);
   });
 
   test(
